@@ -36,8 +36,8 @@
 The file `backend/scripts/fetch_rankings.py` is the entry point for the weekly YouTube harvest that feeds the leaderboard:
 
 - Reads the YouTube Data API key from `YOUTUBE_API_KEY` (fall back option: pass `--api-key`).
-- Runs multiple search queries (`--queries`) limited to the last `RECENT_DAYS` (default 7) so every ranking focuses on just-published ASMR uploads; you can optionally add other query sets later for older videos.
-- Normalizes each video by title/tag/channel, filters out noisy keywords (mukbang, magnetic ball, etc.), deduplicates, and stores both raw video metadata + the generated ranking list. Score is now tied to the view count so the leaderboard reflects actual reach.
+- Runs multiple search queries (`--queries`) limited to the last `RECENT_DAYS` (default 7) and excludes any video shorter than two minutes, so the ranking focuses on recent, fuller ASMR uploads; future playlist columns can relax those constraints if you want to highlight shorts or archive hits.
+- Normalizes each video by title/tag/channel, filters out noisy keywords (mukbang, magnetic ball, etc.), deduplicates, and stores both raw video metadata + the generated ranking list. Score is still recorded as the view count for historical continuity, but the front-end now displays raw Views/Likes, so you don’t need to interpret a separate score value.
 - Writes to Supabase via the same SQLAlchemy models (videos, ranking_lists, ranking_items) so the frontend can see fresh data.
 
 Run it with something like:

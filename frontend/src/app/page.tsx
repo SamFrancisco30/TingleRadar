@@ -185,7 +185,6 @@ export default async function HomePage() {
                       <p style={{ margin: "0", fontSize: "0.75rem", color: "#fbbf24" }}>
                         Views {item.video.view_count.toLocaleString()} · Likes {item.video.like_count.toLocaleString()}
                       </p>
-                      <p style={{ margin: 0, fontSize: "0.75rem", color: "#fbbf24" }}>Score {item.score}</p>
                     </div>
                   </article>
                 ))}

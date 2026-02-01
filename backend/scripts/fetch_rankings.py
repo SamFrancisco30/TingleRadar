@@ -216,6 +216,11 @@ def extract_view_count(detail: Dict[str, Any]) -> int:
         return 0
 
 
+def is_long_video(video_payload: Dict[str, Any]) -> bool:
+    duration = video_payload.get("duration")
+    return duration is not None and duration >= 120
+
+
 def persist_ranking(
     session,
     payload: RankingPayload,
@@ -232,7 +237,10 @@ def persist_ranking(
     recent_candidates = []
     for item in filtered:
         video_payload = normalize_video_payload(item)
-        if video_payload["published_at"] >= recent_threshold:
+        if (
+            video_payload["published_at"] >= recent_threshold
+            and is_long_video(video_payload)
+        ):
             recent_candidates.append(video_payload)
 
     truncated = recent_candidates[:top_n]
