@@ -274,45 +274,47 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
               First click authorizes with YouTube; second click updates the playlist.
             </p>
             <button
-          onClick={handlePushToYouTube}
-          style={{
-            borderRadius: "999px",
-            border: "1px solid #B19CD9",
-            background: syncState === "syncing" ? "#9F7AEA" : "#B19CD9",
-            color: "#fff",
-            padding: "0.5rem 1.1rem",
-            fontSize: "0.8rem",
-            cursor: playlistRows.length && syncState !== "syncing" ? "pointer" : "not-allowed",
-            transition: "transform 150ms ease, box-shadow 150ms ease, background-color 150ms ease, border-color 150ms ease",
-          }}
-          disabled={!playlistRows.length || syncState === "syncing"}
-          onMouseEnter={(e) => {
-            if (!playlistRows.length || syncState === "syncing") return;
-            (e.currentTarget as HTMLButtonElement).style.transform = "scale(1.02)";
-            (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 0 18px rgba(159, 122, 234, 0.45)";
-            (e.currentTarget as HTMLButtonElement).style.backgroundColor = "#9F7AEA";
-            (e.currentTarget as HTMLButtonElement).style.borderColor = "#9F7AEA";
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.transform = "scale(1.0)";
-            (e.currentTarget as HTMLButtonElement).style.boxShadow = "none";
-            (e.currentTarget as HTMLButtonElement).style.backgroundColor = syncState === "syncing" ? "#9F7AEA" : "#B19CD9";
-            (e.currentTarget as HTMLButtonElement).style.borderColor = "#B19CD9";
-          }}
-        >
-          {syncState === "syncing" ? "Syncing..." : "Push to YouTube"}
-        </button>
-        {syncMessage && (
-          <p
-            style={{
-              fontSize: "0.75rem",
-              marginTop: "0.5rem",
-              color: syncState === "error" ? "#f87171" : "#34d399",
-            }}
-          >
-            {syncMessage}
-          </p>
-        )}
+              onClick={handlePushToYouTube}
+              style={{
+                borderRadius: "999px",
+                border: "1px solid #B19CD9",
+                background: syncState === "syncing" ? "#9F7AEA" : "#B19CD9",
+                color: "#fff",
+                padding: "0.5rem 1.1rem",
+                fontSize: "0.8rem",
+                cursor: playlistRows.length && syncState !== "syncing" ? "pointer" : "not-allowed",
+                transition: "transform 150ms ease, box-shadow 150ms ease, background-color 150ms ease, border-color 150ms ease",
+              }}
+              disabled={!playlistRows.length || syncState === "syncing"}
+              onMouseEnter={(e) => {
+                if (!playlistRows.length || syncState === "syncing") return;
+                (e.currentTarget as HTMLButtonElement).style.transform = "scale(1.02)";
+                (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 0 18px rgba(159, 122, 234, 0.45)";
+                (e.currentTarget as HTMLButtonElement).style.backgroundColor = "#9F7AEA";
+                (e.currentTarget as HTMLButtonElement).style.borderColor = "#9F7AEA";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.transform = "scale(1.0)";
+                (e.currentTarget as HTMLButtonElement).style.boxShadow = "none";
+                (e.currentTarget as HTMLButtonElement).style.backgroundColor = syncState === "syncing" ? "#9F7AEA" : "#B19CD9";
+                (e.currentTarget as HTMLButtonElement).style.borderColor = "#B19CD9";
+              }}
+            >
+              {syncState === "syncing" ? "Syncing..." : "Push to YouTube"}
+            </button>
+            {syncMessage && (
+              <p
+                style={{
+                  fontSize: "0.75rem",
+                  marginTop: "0.5rem",
+                  color: syncState === "error" ? "#f87171" : "#34d399",
+                }}
+              >
+                {syncMessage}
+              </p>
+            )}
+          </div>
+        </div>
       </div>
       <div
         className="space-y-8"
