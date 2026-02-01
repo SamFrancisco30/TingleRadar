@@ -246,6 +246,7 @@ def persist_ranking(
     for idx, item in enumerate(truncated, start=1):
         video_payload = normalize_video_payload(item)
         session.merge(Video(**video_payload))
+        session.flush()
         session.add(
             RankingItem(
                 ranking_list_id=ranking.id,
