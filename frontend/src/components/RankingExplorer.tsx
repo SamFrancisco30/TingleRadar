@@ -78,6 +78,16 @@ const languageLabels: Record<string, string> = {
   zh: "Chinese",
 };
 
+// Display helper: convert internal tag ids (snake_case) to human-friendly labels.
+const displayTag = (tag: string): string => {
+  if (typeLabels[tag]) return typeLabels[tag];
+  // Fallback: split on underscore and capitalize first letter of each word.
+  return tag
+    .split("_")
+    .map((part) => (part ? part[0].toUpperCase() + part.slice(1) : ""))
+    .join(" ");
+};
+
 const chipStyle = (active?: boolean) => ({
   padding: "0.35rem 0.75rem",
   borderRadius: "999px",
@@ -437,7 +447,7 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
                             color: "#cbd5f5",
                           }}
                         >
-                          {tag}
+                          {displayTag(tag)}
                         </span>
                       ))}
                       <span
