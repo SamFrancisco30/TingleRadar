@@ -7,6 +7,9 @@
    DATABASE_URL=postgresql://postgres.ttejnvtklcmbgnetciej:<password>@aws-1-ca-central-1.pooler.supabase.com:5432/postgres
    SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
    YOUTUBE_API_KEY=<youtube-data-api-key>
+   YOUTUBE_CLIENT_ID=<youtube-oauth-client-id>
+   YOUTUBE_CLIENT_SECRET=<youtube-oauth-client-secret>
+   YOUTUBE_OAUTH_REDIRECT=<your-app-url>/api/auth/youtube/callback
    ```
 2. Install dependencies:
    ```bash
