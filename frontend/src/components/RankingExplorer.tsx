@@ -149,18 +149,21 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
     <div>
       <div
         style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 10,
           borderRadius: "1.5rem",
-          border: "1px solid #1f2937",
-          background: "rgba(15, 23, 42, 0.6)",
+          border: "1px solid #262832",
+          background: "#16181E",
           padding: "1.25rem",
-          marginBottom: "1.25rem",
-          backdropFilter: "blur(10px)",
+          marginBottom: "1.5rem",
+          backdropFilter: "blur(12px)",
         }}
       >
         <p
           style={{
-            fontSize: "0.75rem",
-            color: "#cbd5f5",
+            fontSize: "0.8rem",
+            color: "#E2E8F0",
             margin: 0,
             marginBottom: "0.5rem",
           }}
@@ -170,7 +173,7 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
         <p
           style={{
             fontSize: "0.7rem",
-            color: "#9ca3af",
+            color: "#94A3B8",
             margin: 0,
             marginBottom: "0.75rem",
           }}
@@ -182,14 +185,28 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
           onClick={handlePushToYouTube}
           style={{
             borderRadius: "999px",
-            border: "1px solid #2563eb",
-            background: syncState === "syncing" ? "#1d4ed8" : "#2563eb",
+            border: "1px solid #B19CD9",
+            background: syncState === "syncing" ? "#9F7AEA" : "#B19CD9",
             color: "#fff",
-            padding: "0.4rem 1rem",
+            padding: "0.5rem 1.1rem",
             fontSize: "0.8rem",
             cursor: playlistRows.length && syncState !== "syncing" ? "pointer" : "not-allowed",
+            transition: "transform 150ms ease, box-shadow 150ms ease, background-color 150ms ease, border-color 150ms ease",
           }}
           disabled={!playlistRows.length || syncState === "syncing"}
+          onMouseEnter={(e) => {
+            if (!playlistRows.length || syncState === "syncing") return;
+            (e.currentTarget as HTMLButtonElement).style.transform = "scale(1.02)";
+            (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 0 18px rgba(159, 122, 234, 0.45)";
+            (e.currentTarget as HTMLButtonElement).style.backgroundColor = "#9F7AEA";
+            (e.currentTarget as HTMLButtonElement).style.borderColor = "#9F7AEA";
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.transform = "scale(1.0)";
+            (e.currentTarget as HTMLButtonElement).style.boxShadow = "none";
+            (e.currentTarget as HTMLButtonElement).style.backgroundColor = syncState === "syncing" ? "#9F7AEA" : "#B19CD9";
+            (e.currentTarget as HTMLButtonElement).style.borderColor = "#B19CD9";
+          }}
         >
           {syncState === "syncing" ? "Syncing..." : "Push to YouTube"}
         </button>
@@ -205,19 +222,26 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
           </p>
         )}
       </div>
-      <div className="space-y-8">
+      <div
+        className="space-y-8"
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+          gap: "1.5rem",
+        }}
+      >
         {normalized.map((list) => (
-          <section key={list.name} style={{ marginBottom: "2rem" }}>
+          <section key={list.name} style={{ marginBottom: "0" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
                 <h2 style={{ fontSize: "1.75rem", margin: 0 }}>{list.name}</h2>
-                <p style={{ color: "#94a3b8" }}>{list.description}</p>
+                <p style={{ color: "#94A3B8" }}>{list.description}</p>
               </div>
               <span style={{ fontSize: "0.9rem", color: "#94a3b8" }}>
                 {new Date(list.published_at).toLocaleDateString()}
               </span>
             </div>
-            <div style={{ marginTop: "1rem" }}>
+            <div style={{ marginTop: "0.75rem" }}>
               {list.items.map((item) => (
                 <article
                   key={item.video.youtube_id}
@@ -225,15 +249,26 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
                     display: "flex",
                     gap: "1rem",
                     marginBottom: "1rem",
-                    padding: "1rem",
+                    padding: "1.15rem",
                     borderRadius: "1.25rem",
-                    border: "1px solid #1e293b",
-                    background: "rgba(15, 23, 42, 0.75)",
-                    boxShadow: "0 15px 40px rgba(2, 6, 23, 0.55)",
+                    border: "1px solid #262832",
+                    background: "#16181E",
+                    boxShadow: "0 18px 40px rgba(0, 0, 0, 0.55)",
                     alignItems: "center",
+                    transition: "transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease",
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.transform = "scale(1.02)";
+                    (e.currentTarget as HTMLElement).style.boxShadow = "0 22px 55px rgba(0, 0, 0, 0.75)";
+                    (e.currentTarget as HTMLElement).style.borderColor = "#2f3340";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.transform = "scale(1.0)";
+                    (e.currentTarget as HTMLElement).style.boxShadow = "0 18px 40px rgba(0, 0, 0, 0.55)";
+                    (e.currentTarget as HTMLElement).style.borderColor = "#262832";
                   }}
                 >
-                  <div style={{ minWidth: "120px", maxWidth: "140px" }}>
+                  <div style={{ minWidth: "140px", maxWidth: "170px" }}>
                     <img
                       src={item.video.thumbnail_url}
                       alt={item.video.title}
