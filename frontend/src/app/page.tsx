@@ -14,6 +14,7 @@ type RankingItem = {
     description?: string | null;
     duration?: number | null;
     tags?: string[] | null;
+    computed_tags?: string[];
   };
 };
 

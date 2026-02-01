@@ -54,6 +54,7 @@ type RankingItem = {
     description?: string | null;
     duration?: number | null;
     tags?: string[] | null;
+    computed_tags?: string[];
   };
 };
 
@@ -114,11 +115,15 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
     () =>
       rankings.map((list) => ({
         ...list,
-        items: list.items.map((item) => ({
-          ...item,
-          type_tags: detectTypeTags(item.video),
-          language: detectLanguage(item.video),
-        })),
+        items: list.items.map((item) => {
+          const computed = (item.video as any).computed_tags as string[] | undefined;
+          const typeTags = computed && computed.length ? computed : detectTypeTags(item.video);
+          return {
+            ...item,
+            type_tags: typeTags,
+            language: detectLanguage(item.video),
+          };
+        }),
       })),
     [rankings]
   );
