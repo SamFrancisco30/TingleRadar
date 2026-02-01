@@ -23,18 +23,6 @@ const languageLabels: Record<string, string> = {
   zh: "Chinese",
 };
 
-const chipStyle = (active?: boolean) => ({
-  padding: "0.35rem 0.75rem",
-  borderRadius: "999px",
-  border: "1px solid",
-  borderColor: active ? "#059669" : "#475569",
-  background: active ? "#059669" : "#0f172a",
-  color: active ? "#fff" : "#e2e8f0",
-  fontSize: "0.7rem",
-  cursor: "pointer",
-  transition: "border-color 150ms ease, background 150ms ease",
-});
-
 type RankingItem = {
   rank: number;
   score: number;
@@ -79,9 +67,6 @@ const detectLanguage = (video: RankingItem["video"]): string => {
   }
   return "en";
 };
-
-const rankingTypeOptions = Object.keys(typeKeywords);
-const languageOptions = ["en", "ja", "ko", "zh"];
 
 export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
   const [syncState, setSyncState] = useState<"idle" | "syncing" | "success" | "error">("idle");
