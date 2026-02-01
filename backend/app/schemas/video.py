@@ -16,6 +16,8 @@ class VideoBase(BaseModel):
     duration: Optional[int]
     tags: Optional[List[str]] = Field(default_factory=list)
     thumbnail_url: Optional[str]
+    # Computed tags derived from title/description/tags on the backend.
+    computed_tags: List[str] = Field(default_factory=list)
 
     class Config:
         orm_mode = True

@@ -8,6 +8,7 @@ from app.models import RankingItem as RankingItemModel
 from app.models import Video as VideoModel
 from app.schemas.ranking import RankingItem, RankingList
 from app.schemas.video import VideoBase
+from app.services.tagging import compute_tags_for_video
 
 
 def fetch_weekly_rankings(db: Session) -> List[RankingList]:
@@ -32,11 +33,16 @@ def fetch_weekly_rankings(db: Session) -> List[RankingList]:
             video = db.query(VideoModel).filter(VideoModel.youtube_id == item.video_id).first()
             if not video:
                 continue
+
+            video_payload = VideoBase.from_orm(video)
+            # Attach computed tags so the frontend can filter by trigger/roleplay/etc.
+            video_payload.computed_tags = compute_tags_for_video(video)
+
             ranking_items.append(
                 RankingItem(
                     rank=item.position,
                     score=item.score or 0,
-                    video=VideoBase.from_orm(video),
+                    video=video_payload,
                 )
             )
         results.append(
