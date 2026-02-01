@@ -9,6 +9,8 @@ type RankingItem = {
     title: string;
     channel_title: string;
     thumbnail_url: string;
+    view_count: number;
+    like_count: number;
   };
 };
 
@@ -39,6 +41,8 @@ type SupabaseRankingItem = {
     title: string;
     channel_title: string;
     thumbnail_url: string;
+    view_count: number | null;
+    like_count: number | null;
   } | null;
 };
 
@@ -57,7 +61,7 @@ async function fetchRankings(): Promise<RankingList[]> {
   const { data, error } = await supabase
     .from("ranking_lists")
     .select(
-      `name,description,created_at,ranking_items(position,score,video:videos(youtube_id,title,channel_title,thumbnail_url))`
+      `name,description,created_at,ranking_items(position,score,video:videos(youtube_id,title,channel_title,thumbnail_url,view_count,like_count))`
     )
     .order("created_at", { ascending: false })
     .limit(3);
@@ -81,6 +85,8 @@ async function fetchRankings(): Promise<RankingList[]> {
           title: item.video?.title || "",
           channel_title: item.video?.channel_title || "",
           thumbnail_url: item.video?.thumbnail_url || "",
+          view_count: item.video?.view_count ?? 0,
+          like_count: item.video?.like_count ?? 0,
         },
       }))
       .filter((item) => item.video.youtube_id),
@@ -175,6 +181,9 @@ export default async function HomePage() {
                       </a>
                       <p style={{ margin: "0.35rem 0", fontSize: "0.85rem", color: "#9ca3af" }}>
                         {item.video.channel_title}
+                      </p>
+                      <p style={{ margin: "0", fontSize: "0.75rem", color: "#fbbf24" }}>
+                        Views {item.video.view_count.toLocaleString()} · Likes {item.video.like_count.toLocaleString()}
                       </p>
                       <p style={{ margin: 0, fontSize: "0.75rem", color: "#fbbf24" }}>Score {item.score}</p>
                     </div>

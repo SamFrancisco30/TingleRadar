@@ -3,7 +3,7 @@
 import argparse
 import logging
 from collections import OrderedDict
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Any, Dict, Iterable, List, NamedTuple, Optional
 
 import requests
@@ -23,6 +23,7 @@ DEFAULT_QUERIES = [
     "ASMR roleplay",
     "ASMR ear to ear",
 ]
+RECENT_DAYS = 7
 BLACKLIST_KEYWORDS = [
     "mukbang",
     "magnetic ball",
@@ -96,14 +97,15 @@ def youtube_request(url: str, api_key: str, **params: Any) -> Dict[str, Any]:
     return response.json()
 
 
-def fetch_search_ids(api_key: str, query: str, max_results: int) -> List[str]:
-    logger.info("Querying YouTube for %s", query)
+def fetch_search_ids(api_key: str, query: str, max_results: int, published_after: str) -> List[str]:
+    logger.info("Querying YouTube for %s since %s", query, published_after)
     params = {
         "part": "snippet",
         "type": "video",
         "maxResults": min(max_results, 50),
         "order": "viewCount",
         "q": query,
+        "publishedAfter": published_after,
     }
     payload = youtube_request(YOUTUBE_SEARCH_URL, api_key, **params)
     return [
@@ -168,6 +170,11 @@ def parse_duration_seconds(value: Optional[str]) -> Optional[int]:
         return None
 
 
+def get_published_after_iso() -> str:
+    threshold = datetime.now(timezone.utc) - timedelta(days=RECENT_DAYS)
+    return threshold.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
 def normalize_video_payload(detail: Dict[str, Any]) -> Dict[str, Any]:
     snippet = detail.get("snippet", {})
     stats = detail.get("statistics", {})
@@ -216,35 +223,40 @@ def persist_ranking(
     description: str,
     top_n: int,
     dry_run: bool,
+    recent_threshold: datetime,
 ) -> None:
     logger.info("Building ranking list %s with %s candidates", list_name, len(payload.items))
     sorted_items = sorted(payload.items, key=extract_view_count, reverse=True)
     filtered = [item for item in sorted_items if filter_video(item.get("snippet", {}))]
-    truncated = filtered[:top_n]
+
+    recent_candidates = []
+    for item in filtered:
+        video_payload = normalize_video_payload(item)
+        if video_payload["published_at"] >= recent_threshold:
+            recent_candidates.append(video_payload)
+
+    truncated = recent_candidates[:top_n]
 
     if not truncated:
-        logger.warning("No items survived filtering—nothing to persist.")
+        logger.warning("No recent items survived filtering—nothing to persist.")
         return
 
     preview_count = min(5, len(truncated))
     logger.info("Top %s preview (title · channel · views):", preview_count)
-    for idx, item in enumerate(truncated[:preview_count], start=1):
-        snippet = item.get("snippet", {})
-        stats = item.get("statistics", {})
+    for idx, payload in enumerate(truncated[:preview_count], start=1):
         logger.info(
             "#%s %s · %s · %s views",
             idx,
-            snippet.get("title", "<missing title>"),
-            snippet.get("channelTitle", "<unknown channel>"),
-            stats.get("viewCount", "0"),
+            payload["title"],
+            payload["channel_title"],
+            payload["view_count"],
         )
 
     ranking = RankingList(name=list_name, description=description)
     session.add(ranking)
     session.flush()
 
-    for idx, item in enumerate(truncated, start=1):
-        video_payload = normalize_video_payload(item)
+    for idx, video_payload in enumerate(truncated, start=1):
         session.merge(Video(**video_payload))
         session.flush()
         session.add(
@@ -272,10 +284,12 @@ def main() -> None:
         raise RuntimeError("YouTube API key is required—set YOUTUBE_API_KEY in the .env file")
 
     session = SessionLocal()
+    recent_threshold = datetime.now(timezone.utc) - timedelta(days=RECENT_DAYS)
+    published_after = get_published_after_iso()
     try:
         aggregated: "OrderedDict[str, None]" = OrderedDict()
         for query in args.queries:
-            for video_id in fetch_search_ids(api_key, query, args.per_query):
+            for video_id in fetch_search_ids(api_key, query, args.per_query, published_after):
                 aggregated.setdefault(video_id, None)
 
         payload = RankingPayload(
@@ -285,7 +299,15 @@ def main() -> None:
         )
         list_name = args.name or f"ASMR Weekly Pulse {payload.generated_at:%Y-%m-%d}"
         description = args.description or f"Queries: {', '.join(payload.queries)}"
-        persist_ranking(session, payload, list_name, description, args.top, args.dry_run)
+        persist_ranking(
+            session,
+            payload,
+            list_name,
+            description,
+            args.top,
+            args.dry_run,
+            recent_threshold,
+        )
     finally:
         session.close()
 
