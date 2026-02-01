@@ -1,5 +1,23 @@
 import type { Metadata } from "next";
 
+type RankingItem = {
+  rank: number;
+  score: number;
+  video: {
+    youtube_id: string;
+    title: string;
+    channel_title: string;
+    thumbnail_url: string;
+  };
+};
+
+type RankingList = {
+  name: string;
+  description: string;
+  published_at: string;
+  items: RankingItem[];
+};
+
 export const metadata: Metadata = {
   title: "TingleRadar — ASMR rankings",
   description:
@@ -8,7 +26,7 @@ export const metadata: Metadata = {
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
-async function fetchRankings() {
+async function fetchRankings(): Promise<RankingList[]> {
   const res = await fetch(`${API_BASE}/api/rankings/weekly`, { cache: "no-store" });
   if (!res.ok) {
     throw new Error("Failed to load rankings");
@@ -17,7 +35,7 @@ async function fetchRankings() {
 }
 
 export default async function HomePage() {
-  let rankings: any[] = [];
+  let rankings: RankingList[] = [];
   try {
     rankings = await fetchRankings();
   } catch (error) {
