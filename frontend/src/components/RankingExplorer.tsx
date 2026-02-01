@@ -2,12 +2,6 @@
 
 import { useMemo, useState } from "react";
 
-const durationBuckets = [
-  { id: "short", label: "2-5 min", min: 120, max: 300 },
-  { id: "medium", label: "5-15 min", min: 300, max: 900 },
-  { id: "long", label: "15+ min", min: 900 },
-];
-
 const typeKeywords: Record<string, string[]> = {
   whisper: ["whisper", "耳语", "whispering"],
   roleplay: ["roleplay", "r.p", "场景"],
@@ -86,20 +80,6 @@ const detectLanguage = (video: RankingItem["video"]): string => {
   return "en";
 };
 
-const filterByDuration = (item: RankingItem, bucketId: string) => {
-  const duration = item.video.duration ?? 0;
-  const bucket = durationBuckets.find((b) => b.id === bucketId);
-  if (!bucket) {
-    return true;
-  }
-
-  if (bucket.max) {
-    return duration >= bucket.min && duration < bucket.max;
-  }
-
-  return duration >= bucket.min;
-};
-
 const rankingTypeOptions = Object.keys(typeKeywords);
 const languageOptions = ["en", "ja", "ko", "zh"];
 
@@ -121,10 +101,8 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
   );
 
   const playlistRows = normalized[0]?.items ?? [];
-  const playlistUrls = playlistRows.map((item) => `https://youtube.com/watch?v=${item.video.youtube_id}`).join("\n");
-
-  const playlistName = filtered[0]?.name ?? "TingleRadar Weekly Playlist";
-  const playlistDescription = filtered[0]?.description ?? "Weekly ASMR playlist curated by TingleRadar.";
+  const playlistName = normalized[0]?.name ?? "TingleRadar Weekly Playlist";
+  const playlistDescription = normalized[0]?.description ?? "Weekly ASMR playlist curated by TingleRadar.";
 
   const parseResponseError = async (response: Response) => {
     try {
@@ -182,17 +160,6 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
     }
   };
 
-  const formatDuration = (seconds?: number | null) => {
-    if (seconds == null || seconds <= 0) {
-      return "Unknown";
-    }
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}m ${secs.toString().padStart(2, "0")}s`;
-  };
-
-  const escapeCsv = (value: string) => `"${value.replace(/"/g, "")}"`;
-
   return (
     <div>
       <div
@@ -224,7 +191,7 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
           }}
         >
           This feature requires YouTube authorization. The first click will take you to Google to authorize;
-          after authorization, come back and click "Push to YouTube" again to actually update the playlist.
+          after authorization, come back and click &quot;Push to YouTube&quot; again to actually update the playlist.
         </p>
         <button
           onClick={handlePushToYouTube}
@@ -253,19 +220,8 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
           </p>
         )}
       </div>
-      {syncMessage && (
-        <p
-          style={{
-            fontSize: "0.75rem",
-            marginTop: "0.15rem",
-            color: syncState === "error" ? "#f87171" : "#34d399",
-          }}
-        >
-          {syncMessage}
-        </p>
-      )}
       <div className="space-y-8">
-        {filtered.map((list) => (
+        {normalized.map((list) => (
           <section key={list.name} style={{ marginBottom: "2rem" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
