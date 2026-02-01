@@ -111,17 +111,33 @@ export default async function HomePage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#05070a", color: "#f5f5f5" }}>
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "linear-gradient(180deg, #040710, #0b1222 60%, #06050a)",
+        color: "#f5f5f5",
+      }}
+    >
       <div style={{ maxWidth: "960px", margin: "0 auto", padding: "2.5rem 1.25rem" }}>
-        <header>
+        <header style={{ marginBottom: "2rem" }}>
           <p style={{ letterSpacing: "0.4em", fontSize: "0.8rem", color: "#6b7280" }}>ASMR BOARD</p>
-          <h1 style={{ fontSize: "3rem", margin: "1rem 0" }}>TingleRadar</h1>
-          <p style={{ color: "#9ca3af", fontSize: "1rem" }}>
+          <h1 style={{ fontSize: "3rem", margin: "0.5rem 0" }}>TingleRadar</h1>
+          <p style={{ color: "#cbd5f5", fontSize: "1rem", maxWidth: "640px" }}>
             Weekly ASMR leaderboard powered by community tags and curated signals.
           </p>
         </header>
 
-        <RankingExplorer rankings={rankings} />
+        <div
+          style={{
+            borderRadius: "1.5rem",
+            background: "rgba(15, 20, 36, 0.75)",
+            border: "1px solid #1e293b",
+            padding: "2rem",
+            boxShadow: "0 20px 80px rgba(5, 6, 15, 0.45)",
+          }}
+        >
+          <RankingExplorer rankings={rankings} />
+        </div>
       </div>
     </div>
   );

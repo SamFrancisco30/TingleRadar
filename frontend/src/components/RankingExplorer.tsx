@@ -193,53 +193,99 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
       </div>
       <div className="space-y-8">
         {filtered.map((list) => (
-          <section key={list.name}>
-            <div className="flex items-center justify-between">
+          <section key={list.name} style={{ marginBottom: "2rem" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
-                <h2 className="text-2xl font-semibold">{list.name}</h2>
-                <p className="text-sm text-slate-400">{list.description}</p>
+                <h2 style={{ fontSize: "1.75rem", margin: 0 }}>{list.name}</h2>
+                <p style={{ color: "#94a3b8" }}>{list.description}</p>
               </div>
-              <span className="text-sm text-slate-500">{new Date(list.published_at).toLocaleDateString()}</span>
+              <span style={{ fontSize: "0.9rem", color: "#94a3b8" }}>
+                {new Date(list.published_at).toLocaleDateString()}
+              </span>
             </div>
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <div style={{ marginTop: "1rem" }}>
               {list.items.map((item) => (
                 <article
                   key={item.video.youtube_id}
-                  className="rounded-2xl border border-slate-800 bg-slate-900/30 p-4 flex gap-4"
+                  style={{
+                    display: "flex",
+                    gap: "1rem",
+                    marginBottom: "1rem",
+                    padding: "1rem",
+                    borderRadius: "1.25rem",
+                    border: "1px solid #1e293b",
+                    background: "rgba(15, 23, 42, 0.75)",
+                    boxShadow: "0 15px 40px rgba(2, 6, 23, 0.55)",
+                    alignItems: "center",
+                  }}
                 >
-                  <div className="w-28">
+                  <div style={{ minWidth: "120px", maxWidth: "140px" }}>
                     <img
-                      className="h-16 w-28 rounded-2xl object-cover"
                       src={item.video.thumbnail_url}
                       alt={item.video.title}
+                      style={{
+                        width: "100%",
+                        height: "74px",
+                        objectFit: "cover",
+                        borderRadius: "1rem",
+                        filter: "brightness(0.9)",
+                      }}
                     />
                   </div>
-                  <div className="flex-1">
-                    <p className="text-xs uppercase tracking-[0.25em] text-slate-500">#{item.rank}</p>
-                    <h3 className="text-lg font-semibold">
-                      <a
-                        className="hover:text-emerald-300"
-                        href={`https://youtube.com/watch?v=${item.video.youtube_id}`}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        {item.video.title}
-                      </a>
-                    </h3>
-                    <p className="text-sm text-slate-400">{item.video.channel_title}</p>
-                    <p className="text-xs text-slate-500">
+                  <div style={{ flex: 1 }}>
+                    <p style={{ letterSpacing: "0.3em", fontSize: "0.65rem", color: "#475569" }}>#{item.rank}</p>
+                    <a
+                      href={`https://youtube.com/watch?v=${item.video.youtube_id}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{
+                        color: "#c084fc",
+                        fontSize: "1.2rem",
+                        fontWeight: 600,
+                        textDecoration: "none",
+                      }}
+                    >
+                      {item.video.title}
+                    </a>
+                    <div style={{ color: "#94a3b8", marginTop: "0.25rem" }}>{item.video.channel_title}</div>
+                    <div style={{ fontSize: "0.85rem", color: "#94a3b8" }}>
                       Views {item.video.view_count.toLocaleString()} · Likes {item.video.like_count.toLocaleString()}
-                    </p>
-                    <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-400">
+                    </div>
+                    <div style={{ marginTop: "0.5rem", display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
                       {item.type_tags.map((tag) => (
-                        <span key={tag} className="rounded-full border border-slate-700 px-2 py-0.5">
+                        <span
+                          key={tag}
+                          style={{
+                            fontSize: "0.65rem",
+                            borderRadius: "999px",
+                            border: "1px solid #475569",
+                            padding: "0.2rem 0.6rem",
+                            color: "#cbd5f5",
+                          }}
+                        >
                           {tag}
                         </span>
                       ))}
-                      <span className="rounded-full border border-slate-700 px-2 py-0.5">
+                      <span
+                        style={{
+                          fontSize: "0.65rem",
+                          borderRadius: "999px",
+                          border: "1px solid #475569",
+                          padding: "0.2rem 0.6rem",
+                          color: "#cbd5f5",
+                        }}
+                      >
                         {languageLabels[item.language] || "English"}
                       </span>
-                      <span className="rounded-full border border-slate-700 px-2 py-0.5">
+                      <span
+                        style={{
+                          fontSize: "0.65rem",
+                          borderRadius: "999px",
+                          border: "1px solid #475569",
+                          padding: "0.2rem 0.6rem",
+                          color: "#cbd5f5",
+                        }}
+                      >
                         {item.video.duration ? `${Math.round(item.video.duration / 60)} min` : "Unknown"}
                       </span>
                     </div>
