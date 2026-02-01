@@ -29,6 +29,18 @@ const languageLabels: Record<string, string> = {
   zh: "Chinese",
 };
 
+const chipStyle = (active?: boolean) => ({
+  padding: "0.35rem 0.75rem",
+  borderRadius: "999px",
+  border: "1px solid",
+  borderColor: active ? "#059669" : "#475569",
+  background: active ? "#059669" : "#0f172a",
+  color: active ? "#fff" : "#e2e8f0",
+  fontSize: "0.7rem",
+  cursor: "pointer",
+  transition: "border-color 150ms ease, background 150ms ease",
+});
+
 type RankingItem = {
   rank: number;
   score: number;
@@ -129,49 +141,51 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
     [normalized, typeFilter, languageFilter, durationFilter]
   );
 
-  const chipClass = (active?: boolean) =>
-    `px-3 py-1 rounded-full border transition duration-150 shadow-sm ${
-      active ? "bg-emerald-600 text-white border-emerald-500" : "border-slate-700 bg-slate-900 text-slate-300 hover:border-emerald-500"
-    }`;
-
   return (
     <div>
-      <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 mb-4 backdrop-blur">
-        <p className="text-xs uppercase tracking-[0.4em] text-slate-500">Filter by</p>
-        <div className="flex flex-wrap gap-2 mt-3">
+      <div style={{
+        borderRadius: "1.5rem",
+        border: "1px solid #1f2937",
+        background: "rgba(15, 23, 42, 0.6)",
+        padding: "1rem",
+        marginBottom: "1rem",
+        backdropFilter: "blur(10px)",
+      }}>
+        <p style={{ fontSize: "0.6rem", letterSpacing: "0.3em", textTransform: "uppercase", color: "#94a3b8" }}>Filter by</p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem", marginTop: "0.75rem" }}>
           {durationBuckets.map((bucket) => (
             <button
               key={bucket.id}
-              className={chipClass(durationFilter === bucket.id)}
+              style={chipStyle(durationFilter === bucket.id)}
               onClick={() => setDurationFilter(durationFilter === bucket.id ? null : bucket.id)}
             >
               {bucket.label}
             </button>
           ))}
         </div>
-        <div className="flex flex-wrap gap-2 mt-3">
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem", marginTop: "0.75rem" }}>
           {rankingTypeOptions.map((type) => (
             <button
               key={type}
-              className={chipClass(typeFilter === type)}
+              style={chipStyle(typeFilter === type)}
               onClick={() => setTypeFilter(typeFilter === type ? null : type)}
             >
               {type}
             </button>
           ))}
         </div>
-        <div className="flex flex-wrap gap-2 mt-3">
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem", marginTop: "0.75rem" }}>
           {languageOptions.map((code) => (
             <button
               key={code}
-              className={chipClass(languageFilter === code)}
+              style={chipStyle(languageFilter === code)}
               onClick={() => setLanguageFilter(languageFilter === code ? null : code)}
             >
               {languageLabels[code]}
             </button>
           ))}
         </div>
-        <div className="mt-4 text-xs text-slate-400">
+        <div style={{ marginTop: "0.75rem", fontSize: "0.7rem", color: "#94a3b8" }}>
           {!typeFilter && !languageFilter && !durationFilter
             ? "Showing all segments"
             : "Filters active – tap again to clear."}
