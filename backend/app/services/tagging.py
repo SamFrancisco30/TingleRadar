@@ -18,7 +18,6 @@ TAG_RULES: List[TagRule] = [
     TagRule(tag="whisper", field="all", keywords=["whisper", "耳语", "whispering"]),
     TagRule(tag="soft_spoken", field="all", keywords=["soft spoken", "soft-spoken"]),
     TagRule(tag="no_talking", field="title", keywords=["no talking", "no-talking", "不讲话"]),
-    TagRule(tag="no_talking", field="tags", keywords=["no talking", "no-talking", "不讲话"]),
 
     # Core triggers
     TagRule(tag="tapping", field="all", keywords=["tapping", "敲击", "knuckle tapping"]),
