@@ -47,6 +47,9 @@ type SupabaseRankingItem = {
     thumbnail_url: string;
     view_count: number | null;
     like_count: number | null;
+    description: string | null;
+    duration: number | null;
+    tags: string[] | null;
   } | null;
 };
 
@@ -91,6 +94,9 @@ async function fetchRankings(): Promise<RankingList[]> {
           thumbnail_url: item.video?.thumbnail_url || "",
           view_count: item.video?.view_count ?? 0,
           like_count: item.video?.like_count ?? 0,
+          description: item.video?.description ?? null,
+          duration: item.video?.duration ?? null,
+          tags: item.video?.tags ?? null,
         },
       }))
       .filter((item) => item.video.youtube_id),
