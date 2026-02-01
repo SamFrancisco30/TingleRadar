@@ -1,4 +1,3 @@
-import { createClient } from "@supabase/supabase-js";
 import type { Metadata } from "next";
 import { RankingExplorer } from "../components/RankingExplorer";
 
@@ -31,73 +30,70 @@ export const metadata: Metadata = {
     "Weekly ASMR leaderboard built for whisper, no-talking, and immersive roleplay content.",
 };
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
-const supabase =
-  supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
-
-type SupabaseRankingItem = {
-  position: number;
+type ApiRankingItem = {
+  rank: number;
   score: number;
   video: {
     youtube_id: string;
     title: string;
     channel_title: string;
     thumbnail_url: string;
-    view_count: number | null;
-    like_count: number | null;
-    description: string | null;
-    duration: number | null;
-    tags: string[] | null;
-  } | null;
+    view_count: number;
+    like_count: number;
+    description?: string | null;
+    duration?: number | null;
+    tags?: string[] | null;
+    computed_tags?: string[];
+  };
 };
 
-type SupabaseRankingList = {
+type ApiRankingList = {
   name: string;
-  description: string | null;
-  created_at: string;
-  ranking_items: SupabaseRankingItem[] | null;
+  description: string;
+  published_at: string;
+  items: ApiRankingItem[];
 };
 
 async function fetchRankings(): Promise<RankingList[]> {
-  if (!supabase) {
+  if (!backendUrl) {
     return [];
   }
 
-  const { data, error } = await supabase
-    .from("ranking_lists")
-    .select(
-      `name,description,created_at,ranking_items(position,score,video:videos(youtube_id,title,channel_title,thumbnail_url,view_count,like_count,description,duration,tags))`
-    )
-    .order("created_at", { ascending: false })
-    .limit(3);
+  const response = await fetch(`${backendUrl}/rankings/weekly`, {
+    // This is a server component; fetch happens on the server.
+    cache: "no-store",
+  });
 
-  if (error) {
-    throw new Error(error.message);
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(message || "Failed to load rankings from backend");
   }
 
-  const rows = (data as SupabaseRankingList[]) ?? [];
+  const data = (await response.json()) as ApiRankingList[];
 
-  return rows.map((list) => ({
+  return data.map((list) => ({
     name: list.name,
     description: list.description ?? "",
-    published_at: list.created_at,
-    items: (list.ranking_items ?? [])
+    published_at: list.published_at,
+    items: (list.items ?? [])
       .map((item) => ({
-        rank: item.position,
+        rank: item.rank,
         score: item.score,
         video: {
-          youtube_id: item.video?.youtube_id || "",
-          title: item.video?.title || "",
-          channel_title: item.video?.channel_title || "",
-          thumbnail_url: item.video?.thumbnail_url || "",
-          view_count: item.video?.view_count ?? 0,
-          like_count: item.video?.like_count ?? 0,
-          description: item.video?.description ?? null,
-          duration: item.video?.duration ?? null,
-          tags: item.video?.tags ?? null,
-        },
+          youtube_id: item.video.youtube_id,
+          title: item.video.title,
+          channel_title: item.video.channel_title,
+          thumbnail_url: item.video.thumbnail_url,
+          view_count: item.video.view_count ?? 0,
+          like_count: item.video.like_count ?? 0,
+          description: item.video.description ?? null,
+          duration: item.video.duration ?? null,
+          tags: item.video.tags ?? null,
+          // Keep computed_tags in the object so the explorer can use it.
+          computed_tags: item.video.computed_tags ?? [],
+        } as any,
       }))
       .filter((item) => item.video.youtube_id),
   }));
