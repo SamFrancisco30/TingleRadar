@@ -25,7 +25,6 @@ def fetch_weekly_rankings(db: Session) -> List[RankingList]:
             db.query(RankingItemModel)
             .filter(RankingItemModel.ranking_list_id == ranking.id)
             .order_by(RankingItemModel.position)
-            .limit(10)
             .all()
         )
         ranking_items = []
