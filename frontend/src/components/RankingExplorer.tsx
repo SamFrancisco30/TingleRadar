@@ -3,12 +3,55 @@
 import { useMemo, useState } from "react";
 
 const typeKeywords: Record<string, string[]> = {
+  // talking style / meta
   whisper: ["whisper", "耳语", "whispering"],
-  roleplay: ["roleplay", "r.p", "场景"],
-  tapping: ["tapping", "tap", "敲击", "knuckle"],
-  makeup: ["makeup", "cosmetic", "化妆"],
-  "no talking": ["no talking", "silent", "不讲话", "엄마"],
+  "soft spoken": ["soft spoken", "soft-spoken"],
+  "no talking": ["no talking", "silent", "不讲话", "no-talking"],
+
+  // core triggers
+  tapping: ["tapping", "敲击", "knuckle tapping"],
+  scratching: ["scratching", "scratch", "抓挠"],
+  crinkling: ["crinkle", "crinkling", "包装袋", "塑料袋"],
+  brushing: ["brushing", "brush sounds", "耳刷", "hair brushing"],
+  "ear cleaning": ["ear cleaning", "ear massage", "耳搔", "耳朵清洁"],
+  "mouth sounds": ["mouth sounds", "口腔音", "tongue clicking"],
+  "white noise": ["white noise", "fan noise", "air conditioner", "雨声", "rain sounds"],
+  binaural: ["binaural", "3dio", "双耳"],
+  "visual asmr": ["visual asmr", "light triggers", "hand movements", "tracing", "visual triggers"],
+  layered: ["layered asmr", "layered sounds", "soundscape", "multi-layer"],
+
+  // high-level roleplay flag
+  roleplay: ["roleplay", "r.p", "场景", "girlfriend roleplay", "doctor roleplay"],
 };
+
+const roleplaySceneKeywords: Record<string, string[]> = {
+  rp_haircut: ["haircut", "hair cut", "barber", "理发"],
+  rp_cranial: ["cranial nerve exam", "cranial nerve", "神经检查"],
+  rp_dentist: ["dentist", "dental", "tooth exam", "牙医"],
+};
+
+const triggerTypes: string[] = [
+  "tapping",
+  "scratching",
+  "crinkling",
+  "brushing",
+  "ear cleaning",
+  "mouth sounds",
+  "white noise",
+  "binaural",
+  "visual asmr",
+  "layered",
+  "whisper",
+  "soft spoken",
+  "no talking",
+  "roleplay",
+];
+
+const roleplaySceneOptions = [
+  { id: "rp_haircut", label: "Haircut" },
+  { id: "rp_cranial", label: "Cranial nerve exam" },
+  { id: "rp_dentist", label: "Dentist" },
+];
 
 const languageDetectors: [string, RegExp][] = [
   ["ja", /[\u3040-\u30ff\u31f0-\u31ff]/],
@@ -53,9 +96,22 @@ const getSearchBag = (video: RankingItem["video"]) => {
 
 const detectTypeTags = (video: RankingItem["video"]): string[] => {
   const bag = getSearchBag(video);
-  return Object.entries(typeKeywords)
-    .filter(([, keywords]) => keywords.some((keyword) => bag.includes(keyword)))
-    .map(([key]) => key);
+  const tags = new Set<string>();
+
+  for (const [key, keywords] of Object.entries(typeKeywords)) {
+    if (keywords.some((keyword) => bag.includes(keyword))) {
+      tags.add(key);
+    }
+  }
+
+  for (const [sceneKey, keywords] of Object.entries(roleplaySceneKeywords)) {
+    if (keywords.some((keyword) => bag.includes(keyword))) {
+      tags.add("roleplay");
+      tags.add(sceneKey);
+    }
+  }
+
+  return Array.from(tags);
 };
 
 const detectLanguage = (video: RankingItem["video"]): string => {
@@ -70,6 +126,7 @@ const detectLanguage = (video: RankingItem["video"]): string => {
 
 export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
   const [typeFilter, setTypeFilter] = useState<string | null>(null);
+  const [roleplayScene, setRoleplayScene] = useState<string | null>(null);
   const [languageFilter, setLanguageFilter] = useState<string | null>(null);
   const [durationFilter, setDurationFilter] = useState<string | null>(null);
   const [syncState, setSyncState] = useState<"idle" | "syncing" | "success" | "error">("idle");
@@ -93,8 +150,17 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
       normalized.map((list) => ({
         ...list,
         items: list.items.filter((item) => {
-          if (typeFilter && !item.type_tags.includes(typeFilter)) {
-            return false;
+          if (typeFilter) {
+            if (typeFilter === "roleplay") {
+              if (!item.type_tags.includes("roleplay")) {
+                return false;
+              }
+              if (roleplayScene && !item.type_tags.includes(roleplayScene)) {
+                return false;
+              }
+            } else if (!item.type_tags.includes(typeFilter)) {
+              return false;
+            }
           }
           if (languageFilter && item.language !== languageFilter) {
             return false;
@@ -246,10 +312,16 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
                 Type
               </p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
-                {Object.keys(typeKeywords).map((type) => (
+                {triggerTypes.map((type) => (
                   <button
                     key={type}
-                    onClick={() => setTypeFilter(typeFilter === type ? null : type)}
+                    onClick={() => {
+                      const next = typeFilter === type ? null : type;
+                      setTypeFilter(next);
+                      if (next !== "roleplay") {
+                        setRoleplayScene(null);
+                      }
+                    }}
                     style={{
                       padding: "0.3rem 0.75rem",
                       borderRadius: "999px",
@@ -265,6 +337,47 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
                   </button>
                 ))}
               </div>
+              {typeFilter === "roleplay" && (
+                <div style={{ marginTop: "0.25rem" }}>
+                  <p
+                    style={{
+                      fontSize: "0.65rem",
+                      color: "#94A3B8",
+                      margin: 0,
+                      marginBottom: "0.15rem",
+                    }}
+                  >
+                    Roleplay scene
+                  </p>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
+                    {roleplaySceneOptions.map((scene) => (
+                      <button
+                        key={scene.id}
+                        onClick={() =>
+                          setRoleplayScene(roleplayScene === scene.id ? null : scene.id)
+                        }
+                        style={{
+                          padding: "0.25rem 0.7rem",
+                          borderRadius: "999px",
+                          border: "1px solid",
+                          borderColor:
+                            roleplayScene === scene.id ? "#9F7AEA" : "#374151",
+                          background:
+                            roleplayScene === scene.id
+                              ? "rgba(159, 122, 234, 0.18)"
+                              : "#111827",
+                          color: "#E2E8F0",
+                          fontSize: "0.7rem",
+                          cursor: "pointer",
+                        }}
+                      >
+                        {scene.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
             </div>
             <div>
               <p
