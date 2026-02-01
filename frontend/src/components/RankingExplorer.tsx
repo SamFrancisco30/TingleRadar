@@ -13,7 +13,7 @@ const durationBuckets = [
 const typeKeywords: Record<string, string[]> = {
   whisper: ["whisper", "耳语", "whispering"],
   soft_spoken: ["soft spoken", "soft-spoken"],
-  no_talking: ["no talking", "silent", "不讲话", "no-talking"],
+  no_talking: ["no talking", "no-talking", "不讲话"],
 
   tapping: ["tapping", "敲击", "knuckle"],
   scratching: ["scratching", "scratch", "抓挠"],
