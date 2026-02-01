@@ -69,6 +69,9 @@ const detectLanguage = (video: RankingItem["video"]): string => {
 };
 
 export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
+  const [typeFilter, setTypeFilter] = useState<string | null>(null);
+  const [languageFilter, setLanguageFilter] = useState<string | null>(null);
+  const [durationFilter, setDurationFilter] = useState<string | null>(null);
   const [syncState, setSyncState] = useState<"idle" | "syncing" | "success" | "error">("idle");
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
 
@@ -85,9 +88,32 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
     [rankings]
   );
 
-  const playlistRows = normalized[0]?.items ?? [];
-  const playlistName = normalized[0]?.name ?? "TingleRadar Weekly Playlist";
-  const playlistDescription = normalized[0]?.description ?? "Weekly ASMR playlist curated by TingleRadar.";
+  const filtered = useMemo(
+    () =>
+      normalized.map((list) => ({
+        ...list,
+        items: list.items.filter((item) => {
+          if (typeFilter && !item.type_tags.includes(typeFilter)) {
+            return false;
+          }
+          if (languageFilter && item.language !== languageFilter) {
+            return false;
+          }
+          if (durationFilter) {
+            const duration = item.video.duration ?? 0;
+            if (durationFilter === "short" && !(duration >= 120 && duration < 300)) return false;
+            if (durationFilter === "medium" && !(duration >= 300 && duration < 900)) return false;
+            if (durationFilter === "long" && !(duration >= 900)) return false;
+          }
+          return true;
+        }),
+      })),
+    [normalized, typeFilter, languageFilter, durationFilter]
+  );
+
+  const playlistRows = filtered[0]?.items ?? [];
+  const playlistName = filtered[0]?.name ?? "TingleRadar Weekly Playlist";
+  const playlistDescription = filtered[0]?.description ?? "Weekly ASMR playlist curated by TingleRadar.";
 
   const parseResponseError = async (response: Response) => {
     try {
@@ -160,28 +186,94 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
           backdropFilter: "blur(12px)",
         }}
       >
-        <p
-          style={{
-            fontSize: "0.8rem",
-            color: "#E2E8F0",
-            margin: 0,
-            marginBottom: "0.5rem",
-          }}
-        >
-          Push the current weekly ranking to a private YouTube playlist.
-        </p>
-        <p
-          style={{
-            fontSize: "0.7rem",
-            color: "#94A3B8",
-            margin: 0,
-            marginBottom: "0.75rem",
-          }}
-        >
-          This feature requires YouTube authorization. The first click will take you to Google to authorize;
-          after authorization, come back and click &quot;Push to YouTube&quot; again to actually update the playlist.
-        </p>
-        <button
+        <div style={{ display: "flex", justifyContent: "space-between", gap: "1rem", alignItems: "center" }}>
+          <div style={{ flex: 1 }}>
+            <p
+              style={{
+                fontSize: "0.8rem",
+                color: "#E2E8F0",
+                margin: 0,
+                marginBottom: "0.35rem",
+              }}
+            >
+              Filters
+            </p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", marginBottom: "0.4rem" }}>
+              {[
+                { id: "short", label: "2-5 min" },
+                { id: "medium", label: "5-15 min" },
+                { id: "long", label: "15+ min" },
+              ].map((bucket) => (
+                <button
+                  key={bucket.id}
+                  onClick={() => setDurationFilter(durationFilter === bucket.id ? null : bucket.id)}
+                  style={{
+                    padding: "0.3rem 0.75rem",
+                    borderRadius: "999px",
+                    border: "1px solid",
+                    borderColor: durationFilter === bucket.id ? "#9F7AEA" : "#374151",
+                    background: durationFilter === bucket.id ? "rgba(159, 122, 234, 0.18)" : "#111827",
+                    color: "#E2E8F0",
+                    fontSize: "0.7rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  {bucket.label}
+                </button>
+              ))}
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
+              {Object.keys(typeKeywords).map((type) => (
+                <button
+                  key={type}
+                  onClick={() => setTypeFilter(typeFilter === type ? null : type)}
+                  style={{
+                    padding: "0.3rem 0.75rem",
+                    borderRadius: "999px",
+                    border: "1px solid",
+                    borderColor: typeFilter === type ? "#9F7AEA" : "#374151",
+                    background: typeFilter === type ? "rgba(159, 122, 234, 0.18)" : "#111827",
+                    color: "#E2E8F0",
+                    fontSize: "0.7rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  {type}
+                </button>
+              ))}
+              {["en", "ja", "ko", "zh"].map((code) => (
+                <button
+                  key={code}
+                  onClick={() => setLanguageFilter(languageFilter === code ? null : code)}
+                  style={{
+                    padding: "0.3rem 0.75rem",
+                    borderRadius: "999px",
+                    border: "1px solid",
+                    borderColor: languageFilter === code ? "#9F7AEA" : "#374151",
+                    background: languageFilter === code ? "rgba(159, 122, 234, 0.18)" : "#111827",
+                    color: "#E2E8F0",
+                    fontSize: "0.7rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  {languageLabels[code]}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div style={{ minWidth: "220px" }}>
+            <p
+              style={{
+                fontSize: "0.7rem",
+                color: "#94A3B8",
+                margin: 0,
+                marginBottom: "0.6rem",
+              }}
+            >
+              Push the current filtered weekly ranking to a private YouTube playlist.
+              First click authorizes with YouTube; second click updates the playlist.
+            </p>
+            <button
           onClick={handlePushToYouTube}
           style={{
             borderRadius: "999px",
