@@ -28,11 +28,8 @@ export const metadata: Metadata = {
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-if (!supabaseUrl || !supabaseKey) {
-  throw new Error("Missing Supabase URL or anon key in environment variables.");
-}
-
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase =
+  supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 
 type SupabaseRankingItem = {
   position: number;
@@ -53,8 +50,12 @@ type SupabaseRankingList = {
 };
 
 async function fetchRankings(): Promise<RankingList[]> {
+  if (!supabase) {
+    return [];
+  }
+
   const { data, error } = await supabase
-    .from<SupabaseRankingList>("ranking_lists")
+    .from("ranking_lists")
     .select(
       `name,description,created_at,ranking_items(position,score,video:videos(youtube_id,title,channel_title,thumbnail_url))`
     )
@@ -65,11 +66,9 @@ async function fetchRankings(): Promise<RankingList[]> {
     throw new Error(error.message);
   }
 
-  if (!data) {
-    return [];
-  }
+  const rows = (data as SupabaseRankingList[]) ?? [];
 
-  return data.map((list) => ({
+  return rows.map((list) => ({
     name: list.name,
     description: list.description ?? "",
     published_at: list.created_at,
