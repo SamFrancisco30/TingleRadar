@@ -8,12 +8,61 @@ const durationBuckets = [
   { id: "long", label: "15+ min", min: 900 },
 ];
 
+// Keyword-based fallback rules for when the backend doesn't provide computed_tags.
+// Keys here are internal tag ids (snake_case) so they align with backend tagging.
 const typeKeywords: Record<string, string[]> = {
   whisper: ["whisper", "耳语", "whispering"],
-  roleplay: ["roleplay", "r.p", "场景"],
-  tapping: ["tapping", "tap", "敲击", "knuckle"],
-  makeup: ["makeup", "cosmetic", "化妆"],
-  "no talking": ["no talking", "silent", "不讲话", "엄마"],
+  soft_spoken: ["soft spoken", "soft-spoken"],
+  no_talking: ["no talking", "silent", "不讲话", "no-talking"],
+
+  tapping: ["tapping", "敲击", "knuckle"],
+  scratching: ["scratching", "scratch", "抓挠"],
+  crinkling: ["crinkle", "crinkling", "包装袋", "塑料袋"],
+  brushing: ["brushing", "brush sounds", "耳刷", "hair brushing"],
+  ear_cleaning: ["ear cleaning", "ear massage", "耳搔", "耳朵清洁"],
+  mouth_sounds: ["mouth sounds", "口腔音", "tongue clicking"],
+  white_noise: ["white noise", "fan noise", "air conditioner", "雨声", "rain sounds"],
+  binaural: ["binaural", "3dio", "双耳"],
+  visual_asmr: ["visual asmr", "light triggers", "hand movements", "tracing", "visual triggers"],
+  layered: ["layered asmr", "layered sounds", "soundscape", "multi-layer"],
+
+  roleplay: ["roleplay", "r.p", "场景", "girlfriend roleplay", "doctor roleplay"],
+};
+
+// Internal tags that should appear as Type filter chips.
+const triggerTypeOptions: string[] = [
+  "tapping",
+  "scratching",
+  "crinkling",
+  "brushing",
+  "ear_cleaning",
+  "mouth_sounds",
+  "white_noise",
+  "binaural",
+  "visual_asmr",
+  "layered",
+  "whisper",
+  "soft_spoken",
+  "no_talking",
+  "roleplay",
+];
+
+// Human-friendly labels for internal tag ids.
+const typeLabels: Record<string, string> = {
+  tapping: "Tapping",
+  scratching: "Scratching",
+  crinkling: "Crinkling",
+  brushing: "Brushing",
+  ear_cleaning: "Ear cleaning",
+  mouth_sounds: "Mouth sounds",
+  white_noise: "White noise",
+  binaural: "Binaural",
+  visual_asmr: "Visual ASMR",
+  layered: "Layered sounds",
+  whisper: "Whisper",
+  soft_spoken: "Soft spoken",
+  no_talking: "No talking",
+  roleplay: "Roleplay",
 };
 
 const languageDetectors: [string, RegExp][] = [
@@ -101,7 +150,6 @@ const filterByDuration = (item: RankingItem, bucketId: string) => {
   return duration >= bucket.min;
 };
 
-const rankingTypeOptions = Object.keys(typeKeywords);
 const languageOptions = ["en", "ja", "ko", "zh"];
 
 export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
@@ -262,13 +310,13 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
         <div style={{ marginTop: "0.9rem" }}>
           <p style={{ fontSize: "0.65rem", letterSpacing: "0.3em", textTransform: "uppercase", color: "#9ca3af", marginBottom: "0.3rem" }}>Type</p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
-            {rankingTypeOptions.map((type) => (
+            {triggerTypeOptions.map((type) => (
               <button
                 key={type}
                 style={chipStyle(typeFilter === type)}
                 onClick={() => setTypeFilter(typeFilter === type ? null : type)}
               >
-                {type}
+                {typeLabels[type] || type}
               </button>
             ))}
           </div>
