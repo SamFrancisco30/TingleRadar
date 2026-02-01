@@ -226,6 +226,19 @@ def persist_ranking(
         logger.warning("No items survived filtering—nothing to persist.")
         return
 
+    preview_count = min(5, len(truncated))
+    logger.info("Top %s preview (title · channel · views):", preview_count)
+    for idx, item in enumerate(truncated[:preview_count], start=1):
+        snippet = item.get("snippet", {})
+        stats = item.get("statistics", {})
+        logger.info(
+            "#%s %s · %s · %s views",
+            idx,
+            snippet.get("title", "<missing title>"),
+            snippet.get("channelTitle", "<unknown channel>"),
+            stats.get("viewCount", "0"),
+        )
+
     ranking = RankingList(name=list_name, description=description)
     session.add(ranking)
     session.flush()
