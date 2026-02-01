@@ -193,72 +193,110 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
                 fontSize: "0.8rem",
                 color: "#E2E8F0",
                 margin: 0,
-                marginBottom: "0.35rem",
+                marginBottom: "0.5rem",
               }}
             >
               Filters
             </p>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", marginBottom: "0.4rem" }}>
-              {[
-                { id: "short", label: "2-5 min" },
-                { id: "medium", label: "5-15 min" },
-                { id: "long", label: "15+ min" },
-              ].map((bucket) => (
-                <button
-                  key={bucket.id}
-                  onClick={() => setDurationFilter(durationFilter === bucket.id ? null : bucket.id)}
-                  style={{
-                    padding: "0.3rem 0.75rem",
-                    borderRadius: "999px",
-                    border: "1px solid",
-                    borderColor: durationFilter === bucket.id ? "#9F7AEA" : "#374151",
-                    background: durationFilter === bucket.id ? "rgba(159, 122, 234, 0.18)" : "#111827",
-                    color: "#E2E8F0",
-                    fontSize: "0.7rem",
-                    cursor: "pointer",
-                  }}
-                >
-                  {bucket.label}
-                </button>
-              ))}
+            <div style={{ marginBottom: "0.35rem" }}>
+              <p
+                style={{
+                  fontSize: "0.7rem",
+                  color: "#94A3B8",
+                  margin: 0,
+                  marginBottom: "0.2rem",
+                }}
+              >
+                Duration
+              </p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
+                {[
+                  { id: "short", label: "2-5 min" },
+                  { id: "medium", label: "5-15 min" },
+                  { id: "long", label: "15+ min" },
+                ].map((bucket) => (
+                  <button
+                    key={bucket.id}
+                    onClick={() => setDurationFilter(durationFilter === bucket.id ? null : bucket.id)}
+                    style={{
+                      padding: "0.3rem 0.75rem",
+                      borderRadius: "999px",
+                      border: "1px solid",
+                      borderColor: durationFilter === bucket.id ? "#9F7AEA" : "#374151",
+                      background: durationFilter === bucket.id ? "rgba(159, 122, 234, 0.18)" : "#111827",
+                      color: "#E2E8F0",
+                      fontSize: "0.7rem",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {bucket.label}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
-              {Object.keys(typeKeywords).map((type) => (
-                <button
-                  key={type}
-                  onClick={() => setTypeFilter(typeFilter === type ? null : type)}
-                  style={{
-                    padding: "0.3rem 0.75rem",
-                    borderRadius: "999px",
-                    border: "1px solid",
-                    borderColor: typeFilter === type ? "#9F7AEA" : "#374151",
-                    background: typeFilter === type ? "rgba(159, 122, 234, 0.18)" : "#111827",
-                    color: "#E2E8F0",
-                    fontSize: "0.7rem",
-                    cursor: "pointer",
-                  }}
-                >
-                  {type}
-                </button>
-              ))}
-              {["en", "ja", "ko", "zh"].map((code) => (
-                <button
-                  key={code}
-                  onClick={() => setLanguageFilter(languageFilter === code ? null : code)}
-                  style={{
-                    padding: "0.3rem 0.75rem",
-                    borderRadius: "999px",
-                    border: "1px solid",
-                    borderColor: languageFilter === code ? "#9F7AEA" : "#374151",
-                    background: languageFilter === code ? "rgba(159, 122, 234, 0.18)" : "#111827",
-                    color: "#E2E8F0",
-                    fontSize: "0.7rem",
-                    cursor: "pointer",
-                  }}
-                >
-                  {languageLabels[code]}
-                </button>
-              ))}
+            <div style={{ marginBottom: "0.35rem" }}>
+              <p
+                style={{
+                  fontSize: "0.7rem",
+                  color: "#94A3B8",
+                  margin: 0,
+                  marginBottom: "0.2rem",
+                }}
+              >
+                Type
+              </p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
+                {Object.keys(typeKeywords).map((type) => (
+                  <button
+                    key={type}
+                    onClick={() => setTypeFilter(typeFilter === type ? null : type)}
+                    style={{
+                      padding: "0.3rem 0.75rem",
+                      borderRadius: "999px",
+                      border: "1px solid",
+                      borderColor: typeFilter === type ? "#9F7AEA" : "#374151",
+                      background: typeFilter === type ? "rgba(159, 122, 234, 0.18)" : "#111827",
+                      color: "#E2E8F0",
+                      fontSize: "0.7rem",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {type}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <p
+                style={{
+                  fontSize: "0.7rem",
+                  color: "#94A3B8",
+                  margin: 0,
+                  marginBottom: "0.2rem",
+                }}
+              >
+                Language
+              </p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
+                {["en", "ja", "ko", "zh"].map((code) => (
+                  <button
+                    key={code}
+                    onClick={() => setLanguageFilter(languageFilter === code ? null : code)}
+                    style={{
+                      padding: "0.3rem 0.75rem",
+                      borderRadius: "999px",
+                      border: "1px solid",
+                      borderColor: languageFilter === code ? "#9F7AEA" : "#374151",
+                      background: languageFilter === code ? "rgba(159, 122, 234, 0.18)" : "#111827",
+                      color: "#E2E8F0",
+                      fontSize: "0.7rem",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {languageLabels[code]}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
           <div style={{ minWidth: "220px" }}>
