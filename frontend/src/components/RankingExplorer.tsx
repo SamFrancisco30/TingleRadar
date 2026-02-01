@@ -41,10 +41,21 @@ const triggerTypeOptions: string[] = [
   "binaural",
   "visual_asmr",
   "layered",
+  "roleplay",
+];
+
+// Internal tags that should appear as Talking Style filter chips.
+const talkingStyleOptions: string[] = [
   "whisper",
   "soft_spoken",
   "no_talking",
-  "roleplay",
+];
+
+// Roleplay scenes (only shown when roleplay trigger is active).
+const roleplaySceneOptions: string[] = [
+  "rp_haircut",
+  "rp_cranial",
+  "rp_dentist",
 ];
 
 // Human-friendly labels for internal tag ids.
@@ -63,6 +74,9 @@ const typeLabels: Record<string, string> = {
   soft_spoken: "Soft spoken",
   no_talking: "No talking",
   roleplay: "Roleplay",
+  rp_haircut: "Haircut",
+  rp_cranial: "Cranial nerve exam",
+  rp_dentist: "Dentist",
 };
 
 const languageDetectors: [string, RegExp][] = [
@@ -163,8 +177,10 @@ const filterByDuration = (item: RankingItem, bucketId: string) => {
 const languageOptions = ["en", "ja", "ko", "zh"];
 
 export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
-  const [typeFilter, setTypeFilter] = useState<string | null>(null);
-  const [languageFilter, setLanguageFilter] = useState<string | null>(null);
+  const [triggerFilters, setTriggerFilters] = useState<string[]>([]);
+  const [talkingStyleFilters, setTalkingStyleFilters] = useState<string[]>([]);
+  const [languageFilters, setLanguageFilters] = useState<string[]>([]);
+  const [roleplayScenes, setRoleplayScenes] = useState<string[]>([]);
   const [durationFilter, setDurationFilter] = useState<string | null>(null);
   const [syncState, setSyncState] = useState<"idle" | "syncing" | "success" | "error">("idle");
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
@@ -191,19 +207,37 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
       normalized.map((list) => ({
         ...list,
         items: list.items.filter((item) => {
-          if (typeFilter && !item.type_tags.includes(typeFilter)) {
+          // Trigger Type: OR within, AND with others
+          if (triggerFilters.length > 0 && !triggerFilters.some((tag) => item.type_tags.includes(tag))) {
             return false;
           }
-          if (languageFilter && item.language !== languageFilter) {
+          // Talking Style: OR within, AND with others
+          if (talkingStyleFilters.length > 0 && !talkingStyleFilters.some((tag) => item.type_tags.includes(tag))) {
             return false;
           }
+          // Roleplay scenes: only when any scene is selected
+          if (roleplayScenes.length > 0) {
+            // must have base roleplay tag
+            if (!item.type_tags.includes("roleplay")) {
+              return false;
+            }
+            // and at least one selected scene tag
+            if (!roleplayScenes.some((scene) => item.type_tags.includes(scene))) {
+              return false;
+            }
+          }
+          // Language: OR within, AND with others
+          if (languageFilters.length > 0 && !languageFilters.includes(item.language)) {
+            return false;
+          }
+          // Duration: single bucket
           if (durationFilter && !filterByDuration(item, durationFilter)) {
             return false;
           }
           return true;
         }),
       })),
-    [normalized, typeFilter, languageFilter, durationFilter]
+    [normalized, triggerFilters, talkingStyleFilters, roleplayScenes, languageFilters, durationFilter]
   );
 
   const playlistRows = filtered[0]?.items ?? [];
@@ -282,11 +316,13 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
             <p style={{ fontSize: "0.6rem", letterSpacing: "0.3em", textTransform: "uppercase", color: "#94a3b8", margin: 0 }}>Filter by</p>
             <p style={{ margin: "0.25rem 0 0", fontSize: "0.9rem", color: "#cbd5f5" }}>Tap a chip to narrow the leaderboard</p>
           </div>
-          {(typeFilter || languageFilter || durationFilter) && (
+          {(triggerFilters.length || talkingStyleFilters.length || roleplayScenes.length || languageFilters.length || durationFilter) && (
             <button
               onClick={() => {
-                setTypeFilter(null);
-                setLanguageFilter(null);
+                setTriggerFilters([]);
+                setTalkingStyleFilters([]);
+                setRoleplayScenes([]);
+                setLanguageFilters([]);
                 setDurationFilter(null);
               }}
               style={{
@@ -318,31 +354,97 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
           </div>
         </div>
         <div style={{ marginTop: "0.9rem" }}>
-          <p style={{ fontSize: "0.65rem", letterSpacing: "0.3em", textTransform: "uppercase", color: "#9ca3af", marginBottom: "0.3rem" }}>Type</p>
+          <p style={{ fontSize: "0.65rem", letterSpacing: "0.3em", textTransform: "uppercase", color: "#9ca3af", marginBottom: "0.3rem" }}>Trigger Type</p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
-            {triggerTypeOptions.map((type) => (
-              <button
-                key={type}
-                style={chipStyle(typeFilter === type)}
-                onClick={() => setTypeFilter(typeFilter === type ? null : type)}
-              >
-                {typeLabels[type] || type}
-              </button>
-            ))}
+            {triggerTypeOptions.map((type) => {
+              const active = triggerFilters.includes(type);
+              return (
+                <button
+                  key={type}
+                  style={chipStyle(active)}
+                  onClick={() =>
+                    setTriggerFilters((prev) =>
+                      prev.includes(type)
+                        ? prev.filter((t) => t !== type)
+                        : [...prev, type]
+                    )
+                  }
+                >
+                  {typeLabels[type] || type}
+                </button>
+              );
+            })}
           </div>
         </div>
         <div style={{ marginTop: "0.9rem" }}>
+          <p style={{ fontSize: "0.65rem", letterSpacing: "0.3em", textTransform: "uppercase", color: "#9ca3af", marginBottom: "0.3rem" }}>Talking style</p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
+            {talkingStyleOptions.map((style) => {
+              const active = talkingStyleFilters.includes(style);
+              return (
+                <button
+                  key={style}
+                  style={chipStyle(active)}
+                  onClick={() =>
+                    setTalkingStyleFilters((prev) =>
+                      prev.includes(style)
+                        ? prev.filter((s) => s !== style)
+                        : [...prev, style]
+                    )
+                  }
+                >
+                  {typeLabels[style] || displayTag(style)}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        {triggerFilters.includes("roleplay") && (
+          <div style={{ marginTop: "0.9rem" }}>
+            <p style={{ fontSize: "0.65rem", letterSpacing: "0.3em", textTransform: "uppercase", color: "#9ca3af", marginBottom: "0.3rem" }}>Roleplay scene</p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
+              {roleplaySceneOptions.map((scene) => {
+                const active = roleplayScenes.includes(scene);
+                return (
+                  <button
+                    key={scene}
+                    style={chipStyle(active)}
+                    onClick={() =>
+                      setRoleplayScenes((prev) =>
+                        prev.includes(scene)
+                          ? prev.filter((s) => s !== scene)
+                          : [...prev, scene]
+                      )
+                    }
+                  >
+                    {typeLabels[scene] || displayTag(scene)}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+        <div style={{ marginTop: "0.9rem" }}>
           <p style={{ fontSize: "0.65rem", letterSpacing: "0.3em", textTransform: "uppercase", color: "#9ca3af", marginBottom: "0.3rem" }}>Language</p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
-            {languageOptions.map((code) => (
-              <button
-                key={code}
-                style={chipStyle(languageFilter === code)}
-                onClick={() => setLanguageFilter(languageFilter === code ? null : code)}
-              >
-                {languageLabels[code]}
-              </button>
-            ))}
+            {languageOptions.map((code) => {
+              const active = languageFilters.includes(code);
+              return (
+                <button
+                  key={code}
+                  style={chipStyle(active)}
+                  onClick={() =>
+                    setLanguageFilters((prev) =>
+                      prev.includes(code)
+                        ? prev.filter((c) => c !== code)
+                        : [...prev, code]
+                    )
+                  }
+                >
+                  {languageLabels[code]}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
