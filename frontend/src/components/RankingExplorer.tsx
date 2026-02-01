@@ -107,7 +107,6 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
   const [typeFilter, setTypeFilter] = useState<string | null>(null);
   const [languageFilter, setLanguageFilter] = useState<string | null>(null);
   const [durationFilter, setDurationFilter] = useState<string | null>(null);
-  const [copyState, setCopyState] = useState<"idle" | "copied" | "error">("idle");
   const [syncState, setSyncState] = useState<"idle" | "syncing" | "success" | "error">("idle");
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
 
@@ -145,7 +144,6 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
   );
 
   const playlistRows = filtered[0]?.items ?? [];
-  const playlistUrls = playlistRows.map((item) => `https://youtube.com/watch?v=${item.video.youtube_id}`).join("\n");
 
   const playlistName = filtered[0]?.name ?? "TingleRadar Weekly Playlist";
   const playlistDescription = filtered[0]?.description ?? "Weekly ASMR playlist curated by TingleRadar.";
@@ -205,60 +203,6 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
       setSyncMessage(message);
     }
   };
-
-  const copyPlaylist = async () => {
-    if (!playlistUrls) {
-      return;
-    }
-    if (!navigator?.clipboard) {
-      setCopyState("error");
-      return;
-    }
-    try {
-      await navigator.clipboard.writeText(playlistUrls);
-      setCopyState("copied");
-      setTimeout(() => setCopyState("idle"), 1800);
-    } catch (err) {
-      setCopyState("error");
-    }
-  };
-
-  const downloadCsv = () => {
-    if (!playlistRows.length) {
-      return;
-    }
-    const header = "Title,Channel,URL,Views,Likes,Duration";
-    const rows = playlistRows.map((item) => {
-      const durationText = formatDuration(item.video.duration);
-      return [
-        escapeCsv(item.video.title),
-        escapeCsv(item.video.channel_title),
-        `https://youtube.com/watch?v=${item.video.youtube_id}`,
-        item.video.view_count.toString(),
-        item.video.like_count.toString(),
-        durationText,
-      ].join(",");
-    });
-    const csv = [header, ...rows].join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `tingleradar-${Date.now()}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const formatDuration = (seconds?: number | null) => {
-    if (seconds == null || seconds <= 0) {
-      return "Unknown";
-    }
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}m ${secs.toString().padStart(2, "0")}s`;
-  };
-
-  const escapeCsv = (value: string) => `"${value.replace(/"/g, "")}"`;
 
   return (
     <div>
@@ -340,37 +284,7 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
         </div>
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem", alignItems: "center", marginBottom: "1.25rem" }}>
-        <span style={{ fontSize: "0.8rem", color: "#cbd5f5" }}>Export playlist ({playlistRows.length} videos)</span>
-        <button
-          onClick={copyPlaylist}
-          style={{
-            borderRadius: "999px",
-            border: "1px solid #475569",
-            background: "none",
-            color: "#fff",
-            padding: "0.35rem 0.85rem",
-            fontSize: "0.75rem",
-            cursor: playlistRows.length ? "pointer" : "not-allowed",
-          }}
-          disabled={!playlistRows.length}
-        >
-          {copyState === "copied" ? "Copied!" : "Copy URLs"}
-        </button>
-        <button
-          onClick={downloadCsv}
-          style={{
-            borderRadius: "999px",
-            border: "1px solid #475569",
-            background: "none",
-            color: "#fff",
-            padding: "0.35rem 0.85rem",
-            fontSize: "0.75rem",
-            cursor: playlistRows.length ? "pointer" : "not-allowed",
-          }}
-          disabled={!playlistRows.length}
-        >
-          Download CSV
-        </button>
+        <span style={{ fontSize: "0.8rem", color: "#cbd5f5" }}>Playlist size: {playlistRows.length} videos</span>
         <button
           onClick={handlePushToYouTube}
           style={{
