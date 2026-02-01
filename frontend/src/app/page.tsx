@@ -1,3 +1,4 @@
+import { createClient } from "@supabase/supabase-js";
 import type { Metadata } from "next";
 
 type RankingItem = {
@@ -24,14 +25,49 @@ export const metadata: Metadata = {
     "Weekly ASMR leaderboard built for whisper, no-talking, and immersive roleplay content.",
 };
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+  throw new Error("Missing Supabase URL or anon key in environment variables.");
+}
+
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function fetchRankings(): Promise<RankingList[]> {
-  const res = await fetch(`${API_BASE}/api/rankings/weekly`, { cache: "no-store" });
-  if (!res.ok) {
-    throw new Error("Failed to load rankings");
+  const { data, error } = await supabase
+    .from("ranking_lists")
+    .select(
+      `name,description,created_at,ranking_items(position,score,video:videos(youtube_id,title,channel_title,thumbnail_url))`
+    )
+    .order("created_at", { ascending: false })
+    .limit(3);
+
+  if (error) {
+    throw new Error(error.message);
   }
-  return res.json();
+
+  if (!data) {
+    return [];
+  }
+
+  return data.map((list) => ({
+    name: list.name,
+    description: list.description ?? "",
+    published_at: list.created_at,
+    items: (list.ranking_items ?? [])
+      .map((item: any) => ({
+        rank: item.position,
+        score: item.score,
+        video: {
+          youtube_id: item.video?.youtube_id || "",
+          title: item.video?.title || "",
+          channel_title: item.video?.channel_title || "",
+          thumbnail_url: item.video?.thumbnail_url || "",
+        },
+      }))
+      .filter((item) => item.video.youtube_id),
+  }));
 }
 
 export default async function HomePage() {
