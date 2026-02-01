@@ -1,7 +1,8 @@
-fastapi>=0.115.0
-uvicorn[standard]>=0.24.0
-sqlalchemy>=2.0.0
-alembic>=1.11.1
-python-dotenv>=1.0.0
-psycopg[binary]>=3.1
-pydantic>=2.5.0
+fastapi==0.83.0
+uvicorn==0.17.0
+sqlalchemy==1.4.54
+alembic==1.7.7
+python-dotenv==0.20.0
+pg8000==1.26.0
+pydantic==1.9.2
+websockets==9.1

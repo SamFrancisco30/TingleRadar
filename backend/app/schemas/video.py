@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 from datetime import datetime
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -24,4 +22,4 @@ class VideoBase(BaseModel):
 
 
 class VideoDetail(VideoBase):
-    additional_metadata: Optional[dict[str, Any]] = None
+    additional_metadata: Optional[Dict[str, Any]] = None
