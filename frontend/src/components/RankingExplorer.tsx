@@ -104,10 +104,6 @@ const rankingTypeOptions = Object.keys(typeKeywords);
 const languageOptions = ["en", "ja", "ko", "zh"];
 
 export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
-  const [typeFilter, setTypeFilter] = useState<string | null>(null);
-  const [languageFilter, setLanguageFilter] = useState<string | null>(null);
-  const [durationFilter, setDurationFilter] = useState<string | null>(null);
-  const [copyState, setCopyState] = useState<"idle" | "copied" | "error">("idle");
   const [syncState, setSyncState] = useState<"idle" | "syncing" | "success" | "error">("idle");
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
 
@@ -124,27 +120,7 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
     [rankings]
   );
 
-  const filtered = useMemo(
-    () =>
-      normalized.map((list) => ({
-        ...list,
-        items: list.items.filter((item) => {
-          if (typeFilter && !item.type_tags.includes(typeFilter)) {
-            return false;
-          }
-          if (languageFilter && item.language !== languageFilter) {
-            return false;
-          }
-          if (durationFilter && !filterByDuration(item, durationFilter)) {
-            return false;
-          }
-          return true;
-        }),
-      })),
-    [normalized, typeFilter, languageFilter, durationFilter]
-  );
-
-  const playlistRows = filtered[0]?.items ?? [];
+  const playlistRows = normalized[0]?.items ?? [];
   const playlistUrls = playlistRows.map((item) => `https://youtube.com/watch?v=${item.video.youtube_id}`).join("\n");
 
   const playlistName = filtered[0]?.name ?? "TingleRadar Weekly Playlist";
@@ -206,49 +182,6 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
     }
   };
 
-  const copyPlaylist = async () => {
-    if (!playlistUrls) {
-      return;
-    }
-    if (!navigator?.clipboard) {
-      setCopyState("error");
-      return;
-    }
-    try {
-      await navigator.clipboard.writeText(playlistUrls);
-      setCopyState("copied");
-      setTimeout(() => setCopyState("idle"), 1800);
-    } catch (err) {
-      setCopyState("error");
-    }
-  };
-
-  const downloadCsv = () => {
-    if (!playlistRows.length) {
-      return;
-    }
-    const header = "Title,Channel,URL,Views,Likes,Duration";
-    const rows = playlistRows.map((item) => {
-      const durationText = formatDuration(item.video.duration);
-      return [
-        escapeCsv(item.video.title),
-        escapeCsv(item.video.channel_title),
-        `https://youtube.com/watch?v=${item.video.youtube_id}`,
-        item.video.view_count.toString(),
-        item.video.like_count.toString(),
-        durationText,
-      ].join(",");
-    });
-    const csv = [header, ...rows].join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `tingleradar-${Date.now()}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
   const formatDuration = (seconds?: number | null) => {
     if (seconds == null || seconds <= 0) {
       return "Unknown";
@@ -262,115 +195,37 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
 
   return (
     <div>
-      <div style={{
-        borderRadius: "1.5rem",
-        border: "1px solid #1f2937",
-        background: "rgba(15, 23, 42, 0.6)",
-        padding: "1.25rem",
-        marginBottom: "1rem",
-        backdropFilter: "blur(10px)",
-      }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
-          <div>
-            <p style={{ fontSize: "0.6rem", letterSpacing: "0.3em", textTransform: "uppercase", color: "#94a3b8", margin: 0 }}>Filter by</p>
-            <p style={{ margin: "0.25rem 0 0", fontSize: "0.9rem", color: "#cbd5f5" }}>Tap a chip to narrow the leaderboard</p>
-          </div>
-          {(typeFilter || languageFilter || durationFilter) && (
-            <button
-              onClick={() => {
-                setTypeFilter(null);
-                setLanguageFilter(null);
-                setDurationFilter(null);
-              }}
-              style={{
-                border: "1px solid #475569",
-                background: "transparent",
-                color: "#cbd5f5",
-                padding: "0.4rem 0.9rem",
-                borderRadius: "999px",
-                fontSize: "0.7rem",
-                cursor: "pointer",
-              }}
-            >
-              Clear filters
-            </button>
-          )}
-        </div>
-        <div style={{ marginTop: "0.9rem" }}>
-          <p style={{ fontSize: "0.65rem", letterSpacing: "0.3em", textTransform: "uppercase", color: "#9ca3af", marginBottom: "0.3rem" }}>Duration</p>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
-            {durationBuckets.map((bucket) => (
-              <button
-                key={bucket.id}
-                style={chipStyle(durationFilter === bucket.id)}
-                onClick={() => setDurationFilter(durationFilter === bucket.id ? null : bucket.id)}
-              >
-                {bucket.label}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div style={{ marginTop: "0.9rem" }}>
-          <p style={{ fontSize: "0.65rem", letterSpacing: "0.3em", textTransform: "uppercase", color: "#9ca3af", marginBottom: "0.3rem" }}>Type</p>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
-            {rankingTypeOptions.map((type) => (
-              <button
-                key={type}
-                style={chipStyle(typeFilter === type)}
-                onClick={() => setTypeFilter(typeFilter === type ? null : type)}
-              >
-                {type}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div style={{ marginTop: "0.9rem" }}>
-          <p style={{ fontSize: "0.65rem", letterSpacing: "0.3em", textTransform: "uppercase", color: "#9ca3af", marginBottom: "0.3rem" }}>Language</p>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
-            {languageOptions.map((code) => (
-              <button
-                key={code}
-                style={chipStyle(languageFilter === code)}
-                onClick={() => setLanguageFilter(languageFilter === code ? null : code)}
-              >
-                {languageLabels[code]}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem", alignItems: "center", marginBottom: "1.25rem" }}>
-        <span style={{ fontSize: "0.8rem", color: "#cbd5f5" }}>Export playlist ({playlistRows.length} videos)</span>
-        <button
-          onClick={copyPlaylist}
+      <div
+        style={{
+          borderRadius: "1.5rem",
+          border: "1px solid #1f2937",
+          background: "rgba(15, 23, 42, 0.6)",
+          padding: "1.25rem",
+          marginBottom: "1.25rem",
+          backdropFilter: "blur(10px)",
+        }}
+      >
+        <p
           style={{
-            borderRadius: "999px",
-            border: "1px solid #475569",
-            background: "none",
-            color: "#fff",
-            padding: "0.35rem 0.85rem",
             fontSize: "0.75rem",
-            cursor: playlistRows.length ? "pointer" : "not-allowed",
+            color: "#cbd5f5",
+            margin: 0,
+            marginBottom: "0.5rem",
           }}
-          disabled={!playlistRows.length}
         >
-          {copyState === "copied" ? "Copied!" : "Copy URLs"}
-        </button>
-        <button
-          onClick={downloadCsv}
+          Push the current weekly ranking to a private YouTube playlist.
+        </p>
+        <p
           style={{
-            borderRadius: "999px",
-            border: "1px solid #475569",
-            background: "none",
-            color: "#fff",
-            padding: "0.35rem 0.85rem",
-            fontSize: "0.75rem",
-            cursor: playlistRows.length ? "pointer" : "not-allowed",
+            fontSize: "0.7rem",
+            color: "#9ca3af",
+            margin: 0,
+            marginBottom: "0.75rem",
           }}
-          disabled={!playlistRows.length}
         >
-          Download CSV
-        </button>
+          This feature requires YouTube authorization. The first click will take you to Google to authorize;
+          after authorization, come back and click "Push to YouTube" again to actually update the playlist.
+        </p>
         <button
           onClick={handlePushToYouTube}
           style={{
@@ -378,14 +233,25 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
             border: "1px solid #2563eb",
             background: syncState === "syncing" ? "#1d4ed8" : "#2563eb",
             color: "#fff",
-            padding: "0.35rem 0.85rem",
-            fontSize: "0.75rem",
+            padding: "0.4rem 1rem",
+            fontSize: "0.8rem",
             cursor: playlistRows.length && syncState !== "syncing" ? "pointer" : "not-allowed",
           }}
           disabled={!playlistRows.length || syncState === "syncing"}
         >
           {syncState === "syncing" ? "Syncing..." : "Push to YouTube"}
         </button>
+        {syncMessage && (
+          <p
+            style={{
+              fontSize: "0.75rem",
+              marginTop: "0.5rem",
+              color: syncState === "error" ? "#f87171" : "#34d399",
+            }}
+          >
+            {syncMessage}
+          </p>
+        )}
       </div>
       {syncMessage && (
         <p
