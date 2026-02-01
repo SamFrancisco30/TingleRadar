@@ -186,8 +186,8 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
           backdropFilter: "blur(12px)",
         }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", gap: "1rem", alignItems: "center" }}>
-          <div style={{ flex: 1 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+          <div>
             <p
               style={{
                 fontSize: "0.8rem",
@@ -299,7 +299,7 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
               </div>
             </div>
           </div>
-          <div style={{ minWidth: "220px" }}>
+          <div style={{ marginTop: "0.25rem" }}>
             <p
               style={{
                 fontSize: "0.7rem",
