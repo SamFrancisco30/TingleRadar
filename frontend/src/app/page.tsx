@@ -34,9 +34,27 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+type SupabaseRankingItem = {
+  position: number;
+  score: number;
+  video: {
+    youtube_id: string;
+    title: string;
+    channel_title: string;
+    thumbnail_url: string;
+  } | null;
+};
+
+type SupabaseRankingList = {
+  name: string;
+  description: string | null;
+  created_at: string;
+  ranking_items: SupabaseRankingItem[] | null;
+};
+
 async function fetchRankings(): Promise<RankingList[]> {
   const { data, error } = await supabase
-    .from("ranking_lists")
+    .from<SupabaseRankingList>("ranking_lists")
     .select(
       `name,description,created_at,ranking_items(position,score,video:videos(youtube_id,title,channel_title,thumbnail_url))`
     )
@@ -56,7 +74,7 @@ async function fetchRankings(): Promise<RankingList[]> {
     description: list.description ?? "",
     published_at: list.created_at,
     items: (list.ranking_items ?? [])
-      .map((item: any) => ({
+      .map((item) => ({
         rank: item.position,
         score: item.score,
         video: {
