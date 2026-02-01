@@ -50,3 +50,11 @@ PYTHONPATH=. python3 -m backend.scripts.fetch_rankings --dry-run
 ```
 
 Remove `--dry-run` when you want to actually commit a new list. You can override defaults with `--per-query`, `--top`, `--name`, and `--description` to control how many videos are fetched and how the list is labeled.
+
+## YouTube Sync
+
+- Authorization is started via `GET /api/youtube/auth`, which redirects to Google's consent screen using the OAuth settings in `.env`.
+- After the callback completes (`/api/auth/youtube/callback`), the refresh token and playlist ID are stored in the `youtube_credentials`/`youtube_playlists` tables, so future pushes skip reauthorization.
+- The frontend calls `GET /api/youtube/status` to know if authorization exists, and posts `title`, `description`, and `video_ids` to `POST /playlists/weekly/sync` to rebuild the playlist on YouTube.
+- The playlist sync endpoint refreshes the stored credentials, clears existing items, and writes the new batch of videos (private playlist by default).
+

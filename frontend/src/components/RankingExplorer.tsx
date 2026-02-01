@@ -108,6 +108,8 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
   const [languageFilter, setLanguageFilter] = useState<string | null>(null);
   const [durationFilter, setDurationFilter] = useState<string | null>(null);
   const [copyState, setCopyState] = useState<"idle" | "copied" | "error">("idle");
+  const [syncState, setSyncState] = useState<"idle" | "syncing" | "success" | "error">("idle");
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
 
   const normalized = useMemo(
     () =>
@@ -144,6 +146,63 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
 
   const playlistRows = filtered[0]?.items ?? [];
   const playlistUrls = playlistRows.map((item) => `https://youtube.com/watch?v=${item.video.youtube_id}`).join("\n");
+
+  const playlistName = filtered[0]?.name ?? "TingleRadar Weekly Playlist";
+  const playlistDescription = filtered[0]?.description ?? "Weekly ASMR playlist curated by TingleRadar.";
+
+  const parseResponseError = async (response: Response) => {
+    try {
+      const payload = await response.json();
+      if (payload?.detail) {
+        return payload.detail;
+      }
+      if (payload?.message) {
+        return payload.message;
+      }
+      return response.statusText || "YouTube request failed";
+    } catch (err) {
+      return response.statusText || "YouTube request failed";
+    }
+  };
+
+  const handlePushToYouTube = async () => {
+    if (!playlistRows.length) {
+      return;
+    }
+    setSyncState("syncing");
+    setSyncMessage(null);
+    try {
+      const statusResponse = await fetch("/api/youtube/status");
+      if (!statusResponse.ok) {
+        throw new Error(await parseResponseError(statusResponse));
+      }
+      const statusData = await statusResponse.json();
+      if (!statusData.authorized) {
+        window.location.href = "/api/youtube/auth";
+        return;
+      }
+      const payload = {
+        title: playlistName,
+        description: playlistDescription,
+        video_ids: playlistRows.map((item) => item.video.youtube_id),
+      };
+      const syncResponse = await fetch("/api/playlists/weekly/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!syncResponse.ok) {
+        throw new Error(await parseResponseError(syncResponse));
+      }
+      const syncData = await syncResponse.json();
+      setSyncState("success");
+      setSyncMessage(`YouTube playlist updated · ${syncData.playlist_url}`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "YouTube sync failed";
+      setSyncState("error");
+      setSyncMessage(message);
+    }
+  };
 
   const copyPlaylist = async () => {
     if (!playlistUrls) {
@@ -310,7 +369,33 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
         >
           Download CSV
         </button>
+        <button
+          onClick={handlePushToYouTube}
+          style={{
+            borderRadius: "999px",
+            border: "1px solid #2563eb",
+            background: syncState === "syncing" ? "#1d4ed8" : "#2563eb",
+            color: "#fff",
+            padding: "0.35rem 0.85rem",
+            fontSize: "0.75rem",
+            cursor: playlistRows.length && syncState !== "syncing" ? "pointer" : "not-allowed",
+          }}
+          disabled={!playlistRows.length || syncState === "syncing"}
+        >
+          {syncState === "syncing" ? "Syncing..." : "Push to YouTube"}
+        </button>
       </div>
+      {syncMessage && (
+        <p
+          style={{
+            fontSize: "0.75rem",
+            marginTop: "0.15rem",
+            color: syncState === "error" ? "#f87171" : "#34d399",
+          }}
+        >
+          {syncMessage}
+        </p>
+      )}
       <div className="space-y-8">
         {filtered.map((list) => (
           <section key={list.name} style={{ marginBottom: "2rem" }}>
