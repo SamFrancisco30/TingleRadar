@@ -147,48 +147,77 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
         borderRadius: "1.5rem",
         border: "1px solid #1f2937",
         background: "rgba(15, 23, 42, 0.6)",
-        padding: "1rem",
+        padding: "1.25rem",
         marginBottom: "1rem",
         backdropFilter: "blur(10px)",
       }}>
-        <p style={{ fontSize: "0.6rem", letterSpacing: "0.3em", textTransform: "uppercase", color: "#94a3b8" }}>Filter by</p>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem", marginTop: "0.75rem" }}>
-          {durationBuckets.map((bucket) => (
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+          <div>
+            <p style={{ fontSize: "0.6rem", letterSpacing: "0.3em", textTransform: "uppercase", color: "#94a3b8", margin: 0 }}>Filter by</p>
+            <p style={{ margin: "0.25rem 0 0", fontSize: "0.9rem", color: "#cbd5f5" }}>Tap a chip to narrow the leaderboard</p>
+          </div>
+          {(typeFilter || languageFilter || durationFilter) && (
             <button
-              key={bucket.id}
-              style={chipStyle(durationFilter === bucket.id)}
-              onClick={() => setDurationFilter(durationFilter === bucket.id ? null : bucket.id)}
+              onClick={() => {
+                setTypeFilter(null);
+                setLanguageFilter(null);
+                setDurationFilter(null);
+              }}
+              style={{
+                border: "1px solid #475569",
+                background: "transparent",
+                color: "#cbd5f5",
+                padding: "0.4rem 0.9rem",
+                borderRadius: "999px",
+                fontSize: "0.7rem",
+                cursor: "pointer",
+              }}
             >
-              {bucket.label}
+              Clear filters
             </button>
-          ))}
+          )}
         </div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem", marginTop: "0.75rem" }}>
-          {rankingTypeOptions.map((type) => (
-            <button
-              key={type}
-              style={chipStyle(typeFilter === type)}
-              onClick={() => setTypeFilter(typeFilter === type ? null : type)}
-            >
-              {type}
-            </button>
-          ))}
+        <div style={{ marginTop: "0.9rem" }}>
+          <p style={{ fontSize: "0.65rem", letterSpacing: "0.3em", textTransform: "uppercase", color: "#9ca3af", marginBottom: "0.3rem" }}>Duration</p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
+            {durationBuckets.map((bucket) => (
+              <button
+                key={bucket.id}
+                style={chipStyle(durationFilter === bucket.id)}
+                onClick={() => setDurationFilter(durationFilter === bucket.id ? null : bucket.id)}
+              >
+                {bucket.label}
+              </button>
+            ))}
+          </div>
         </div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem", marginTop: "0.75rem" }}>
-          {languageOptions.map((code) => (
-            <button
-              key={code}
-              style={chipStyle(languageFilter === code)}
-              onClick={() => setLanguageFilter(languageFilter === code ? null : code)}
-            >
-              {languageLabels[code]}
-            </button>
-          ))}
+        <div style={{ marginTop: "0.9rem" }}>
+          <p style={{ fontSize: "0.65rem", letterSpacing: "0.3em", textTransform: "uppercase", color: "#9ca3af", marginBottom: "0.3rem" }}>Type</p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
+            {rankingTypeOptions.map((type) => (
+              <button
+                key={type}
+                style={chipStyle(typeFilter === type)}
+                onClick={() => setTypeFilter(typeFilter === type ? null : type)}
+              >
+                {type}
+              </button>
+            ))}
+          </div>
         </div>
-        <div style={{ marginTop: "0.75rem", fontSize: "0.7rem", color: "#94a3b8" }}>
-          {!typeFilter && !languageFilter && !durationFilter
-            ? "Showing all segments"
-            : "Filters active – tap again to clear."}
+        <div style={{ marginTop: "0.9rem" }}>
+          <p style={{ fontSize: "0.65rem", letterSpacing: "0.3em", textTransform: "uppercase", color: "#9ca3af", marginBottom: "0.3rem" }}>Language</p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
+            {languageOptions.map((code) => (
+              <button
+                key={code}
+                style={chipStyle(languageFilter === code)}
+                onClick={() => setLanguageFilter(languageFilter === code ? null : code)}
+              >
+                {languageLabels[code]}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
       <div className="space-y-8">
