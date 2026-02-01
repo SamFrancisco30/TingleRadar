@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.env
+
+# Node
+node_modules/
+.next/
+/dist/
+/.pnp/
+.pnp.js
+
+# Alembic
+backend/alembic/versions/*.pyc
+
+# General
+.DS_Store
+.env.local
+.env.*.local
