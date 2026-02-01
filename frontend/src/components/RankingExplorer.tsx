@@ -165,6 +165,8 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
     }
   };
 
+  const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || "";
+
   const handlePushToYouTube = async () => {
     if (!playlistRows.length) {
       return;
@@ -172,13 +174,13 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
     setSyncState("syncing");
     setSyncMessage(null);
     try {
-      const statusResponse = await fetch("/api/youtube/status");
+      const statusResponse = await fetch(`${API_BASE}/youtube/status`);
       if (!statusResponse.ok) {
         throw new Error(await parseResponseError(statusResponse));
       }
       const statusData = await statusResponse.json();
       if (!statusData.authorized) {
-        window.location.href = "/api/youtube/auth";
+        window.location.href = `${API_BASE}/youtube/auth`;
         return;
       }
       const payload = {
@@ -186,7 +188,7 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
         description: playlistDescription,
         video_ids: playlistRows.map((item) => item.video.youtube_id),
       };
-      const syncResponse = await fetch("/api/playlists/weekly/sync", {
+      const syncResponse = await fetch(`${API_BASE}/playlists/weekly/sync`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
