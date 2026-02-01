@@ -129,46 +129,53 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
     [normalized, typeFilter, languageFilter, durationFilter]
   );
 
+  const chipClass = (active?: boolean) =>
+    `px-3 py-1 rounded-full border transition duration-150 shadow-sm ${
+      active ? "bg-emerald-600 text-white border-emerald-500" : "border-slate-700 bg-slate-900 text-slate-300 hover:border-emerald-500"
+    }`;
+
   return (
     <div>
-      <div className="flex flex-wrap gap-2 mb-4">
-        {durationBuckets.map((bucket) => (
-          <button
-            key={bucket.id}
-            className={`px-3 py-1 rounded-full border ${
-              durationFilter === bucket.id ? "bg-emerald-600 text-white" : "border-slate-600"
-            }`}
-            onClick={() => setDurationFilter(durationFilter === bucket.id ? null : bucket.id)}
-          >
-            {bucket.label}
-          </button>
-        ))}
-      </div>
-      <div className="flex flex-wrap gap-2 mb-4">
-        {rankingTypeOptions.map((type) => (
-          <button
-            key={type}
-            className={`px-3 py-1 rounded-full border ${
-              typeFilter === type ? "bg-emerald-600 text-white" : "border-slate-600"
-            }`}
-            onClick={() => setTypeFilter(typeFilter === type ? null : type)}
-          >
-            {type}
-          </button>
-        ))}
-      </div>
-      <div className="flex flex-wrap gap-2 mb-6">
-        {languageOptions.map((code) => (
-          <button
-            key={code}
-            className={`px-3 py-1 rounded-full border ${
-              languageFilter === code ? "bg-emerald-600 text-white" : "border-slate-600"
-            }`}
-            onClick={() => setLanguageFilter(languageFilter === code ? null : code)}
-          >
-            {languageLabels[code]}
-          </button>
-        ))}
+      <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 mb-4 backdrop-blur">
+        <p className="text-xs uppercase tracking-[0.4em] text-slate-500">Filter by</p>
+        <div className="flex flex-wrap gap-2 mt-3">
+          {durationBuckets.map((bucket) => (
+            <button
+              key={bucket.id}
+              className={chipClass(durationFilter === bucket.id)}
+              onClick={() => setDurationFilter(durationFilter === bucket.id ? null : bucket.id)}
+            >
+              {bucket.label}
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-2 mt-3">
+          {rankingTypeOptions.map((type) => (
+            <button
+              key={type}
+              className={chipClass(typeFilter === type)}
+              onClick={() => setTypeFilter(typeFilter === type ? null : type)}
+            >
+              {type}
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-2 mt-3">
+          {languageOptions.map((code) => (
+            <button
+              key={code}
+              className={chipClass(languageFilter === code)}
+              onClick={() => setLanguageFilter(languageFilter === code ? null : code)}
+            >
+              {languageLabels[code]}
+            </button>
+          ))}
+        </div>
+        <div className="mt-4 text-xs text-slate-400">
+          {!typeFilter && !languageFilter && !durationFilter
+            ? "Showing all segments"
+            : "Filters active – tap again to clear."}
+        </div>
       </div>
       <div className="space-y-8">
         {filtered.map((list) => (
