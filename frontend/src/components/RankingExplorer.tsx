@@ -2,56 +2,19 @@
 
 import { useMemo, useState } from "react";
 
+const durationBuckets = [
+  { id: "short", label: "2-5 min", min: 120, max: 300 },
+  { id: "medium", label: "5-15 min", min: 300, max: 900 },
+  { id: "long", label: "15+ min", min: 900 },
+];
+
 const typeKeywords: Record<string, string[]> = {
-  // talking style / meta
   whisper: ["whisper", "耳语", "whispering"],
-  "soft spoken": ["soft spoken", "soft-spoken"],
-  "no talking": ["no talking", "silent", "不讲话", "no-talking"],
-
-  // core triggers
-  tapping: ["tapping", "敲击", "knuckle tapping"],
-  scratching: ["scratching", "scratch", "抓挠"],
-  crinkling: ["crinkle", "crinkling", "包装袋", "塑料袋"],
-  brushing: ["brushing", "brush sounds", "耳刷", "hair brushing"],
-  "ear cleaning": ["ear cleaning", "ear massage", "耳搔", "耳朵清洁"],
-  "mouth sounds": ["mouth sounds", "口腔音", "tongue clicking"],
-  "white noise": ["white noise", "fan noise", "air conditioner", "雨声", "rain sounds"],
-  binaural: ["binaural", "3dio", "双耳"],
-  "visual asmr": ["visual asmr", "light triggers", "hand movements", "tracing", "visual triggers"],
-  layered: ["layered asmr", "layered sounds", "soundscape", "multi-layer"],
-
-  // high-level roleplay flag
-  roleplay: ["roleplay", "r.p", "场景", "girlfriend roleplay", "doctor roleplay"],
+  roleplay: ["roleplay", "r.p", "场景"],
+  tapping: ["tapping", "tap", "敲击", "knuckle"],
+  makeup: ["makeup", "cosmetic", "化妆"],
+  "no talking": ["no talking", "silent", "不讲话", "엄마"],
 };
-
-const roleplaySceneKeywords: Record<string, string[]> = {
-  rp_haircut: ["haircut", "hair cut", "barber", "理发"],
-  rp_cranial: ["cranial nerve exam", "cranial nerve", "神经检查"],
-  rp_dentist: ["dentist", "dental", "tooth exam", "牙医"],
-};
-
-const triggerTypes: string[] = [
-  "tapping",
-  "scratching",
-  "crinkling",
-  "brushing",
-  "ear cleaning",
-  "mouth sounds",
-  "white noise",
-  "binaural",
-  "visual asmr",
-  "layered",
-  "whisper",
-  "soft spoken",
-  "no talking",
-  "roleplay",
-];
-
-const roleplaySceneOptions = [
-  { id: "rp_haircut", label: "Haircut" },
-  { id: "rp_cranial", label: "Cranial nerve exam" },
-  { id: "rp_dentist", label: "Dentist" },
-];
 
 const languageDetectors: [string, RegExp][] = [
   ["ja", /[\u3040-\u30ff\u31f0-\u31ff]/],
@@ -65,6 +28,18 @@ const languageLabels: Record<string, string> = {
   ko: "Korean",
   zh: "Chinese",
 };
+
+const chipStyle = (active?: boolean) => ({
+  padding: "0.35rem 0.75rem",
+  borderRadius: "999px",
+  border: "1px solid",
+  borderColor: active ? "#059669" : "#475569",
+  background: active ? "#059669" : "#0f172a",
+  color: active ? "#fff" : "#e2e8f0",
+  fontSize: "0.7rem",
+  cursor: "pointer",
+  transition: "border-color 150ms ease, background 150ms ease",
+});
 
 type RankingItem = {
   rank: number;
@@ -96,22 +71,9 @@ const getSearchBag = (video: RankingItem["video"]) => {
 
 const detectTypeTags = (video: RankingItem["video"]): string[] => {
   const bag = getSearchBag(video);
-  const tags = new Set<string>();
-
-  for (const [key, keywords] of Object.entries(typeKeywords)) {
-    if (keywords.some((keyword) => bag.includes(keyword))) {
-      tags.add(key);
-    }
-  }
-
-  for (const [sceneKey, keywords] of Object.entries(roleplaySceneKeywords)) {
-    if (keywords.some((keyword) => bag.includes(keyword))) {
-      tags.add("roleplay");
-      tags.add(sceneKey);
-    }
-  }
-
-  return Array.from(tags);
+  return Object.entries(typeKeywords)
+    .filter(([, keywords]) => keywords.some((keyword) => bag.includes(keyword)))
+    .map(([key]) => key);
 };
 
 const detectLanguage = (video: RankingItem["video"]): string => {
@@ -124,11 +86,28 @@ const detectLanguage = (video: RankingItem["video"]): string => {
   return "en";
 };
 
+const filterByDuration = (item: RankingItem, bucketId: string) => {
+  const duration = item.video.duration ?? 0;
+  const bucket = durationBuckets.find((b) => b.id === bucketId);
+  if (!bucket) {
+    return true;
+  }
+
+  if (bucket.max) {
+    return duration >= bucket.min && duration < bucket.max;
+  }
+
+  return duration >= bucket.min;
+};
+
+const rankingTypeOptions = Object.keys(typeKeywords);
+const languageOptions = ["en", "ja", "ko", "zh"];
+
 export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
   const [typeFilter, setTypeFilter] = useState<string | null>(null);
-  const [roleplayScene, setRoleplayScene] = useState<string | null>(null);
   const [languageFilter, setLanguageFilter] = useState<string | null>(null);
   const [durationFilter, setDurationFilter] = useState<string | null>(null);
+  const [copyState, setCopyState] = useState<"idle" | "copied" | "error">("idle");
   const [syncState, setSyncState] = useState<"idle" | "syncing" | "success" | "error">("idle");
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
 
@@ -150,26 +129,14 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
       normalized.map((list) => ({
         ...list,
         items: list.items.filter((item) => {
-          if (typeFilter) {
-            if (typeFilter === "roleplay") {
-              if (!item.type_tags.includes("roleplay")) {
-                return false;
-              }
-              if (roleplayScene && !item.type_tags.includes(roleplayScene)) {
-                return false;
-              }
-            } else if (!item.type_tags.includes(typeFilter)) {
-              return false;
-            }
+          if (typeFilter && !item.type_tags.includes(typeFilter)) {
+            return false;
           }
           if (languageFilter && item.language !== languageFilter) {
             return false;
           }
-          if (durationFilter) {
-            const duration = item.video.duration ?? 0;
-            if (durationFilter === "short" && !(duration >= 120 && duration < 300)) return false;
-            if (durationFilter === "medium" && !(duration >= 300 && duration < 900)) return false;
-            if (durationFilter === "long" && !(duration >= 900)) return false;
+          if (durationFilter && !filterByDuration(item, durationFilter)) {
+            return false;
           }
           return true;
         }),
@@ -178,6 +145,8 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
   );
 
   const playlistRows = filtered[0]?.items ?? [];
+  const playlistUrls = playlistRows.map((item) => `https://youtube.com/watch?v=${item.video.youtube_id}`).join("\n");
+
   const playlistName = filtered[0]?.name ?? "TingleRadar Weekly Playlist";
   const playlistDescription = filtered[0]?.description ?? "Weekly ASMR playlist curated by TingleRadar.";
 
@@ -237,256 +206,211 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
     }
   };
 
+  const copyPlaylist = async () => {
+    if (!playlistUrls) {
+      return;
+    }
+    if (!navigator?.clipboard) {
+      setCopyState("error");
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(playlistUrls);
+      setCopyState("copied");
+      setTimeout(() => setCopyState("idle"), 1800);
+    } catch (err) {
+      setCopyState("error");
+    }
+  };
+
+  const downloadCsv = () => {
+    if (!playlistRows.length) {
+      return;
+    }
+    const header = "Title,Channel,URL,Views,Likes,Duration";
+    const rows = playlistRows.map((item) => {
+      const durationText = formatDuration(item.video.duration);
+      return [
+        escapeCsv(item.video.title),
+        escapeCsv(item.video.channel_title),
+        `https://youtube.com/watch?v=${item.video.youtube_id}`,
+        item.video.view_count.toString(),
+        item.video.like_count.toString(),
+        durationText,
+      ].join(",");
+    });
+    const csv = [header, ...rows].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `tingleradar-${Date.now()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const formatDuration = (seconds?: number | null) => {
+    if (seconds == null || seconds <= 0) {
+      return "Unknown";
+    }
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}m ${secs.toString().padStart(2, "0")}s`;
+  };
+
+  const escapeCsv = (value: string) => `"${value.replace(/"/g, "")}"`;
+
   return (
     <div>
-      <div
-        style={{
-          position: "sticky",
-          top: 0,
-          zIndex: 10,
-          borderRadius: "1.5rem",
-          border: "1px solid #262832",
-          background: "#16181E",
-          padding: "1.25rem",
-          marginBottom: "1.5rem",
-          backdropFilter: "blur(12px)",
-        }}
-      >
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+      <div style={{
+        borderRadius: "1.5rem",
+        border: "1px solid #1f2937",
+        background: "rgba(15, 23, 42, 0.6)",
+        padding: "1.25rem",
+        marginBottom: "1rem",
+        backdropFilter: "blur(10px)",
+      }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
           <div>
-            <p
-              style={{
-                fontSize: "0.8rem",
-                color: "#E2E8F0",
-                margin: 0,
-                marginBottom: "0.5rem",
-              }}
-            >
-              Filters
-            </p>
-            <div style={{ marginBottom: "0.35rem" }}>
-              <p
-                style={{
-                  fontSize: "0.7rem",
-                  color: "#94A3B8",
-                  margin: 0,
-                  marginBottom: "0.2rem",
-                }}
-              >
-                Duration
-              </p>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
-                {[
-                  { id: "short", label: "2-5 min" },
-                  { id: "medium", label: "5-15 min" },
-                  { id: "long", label: "15+ min" },
-                ].map((bucket) => (
-                  <button
-                    key={bucket.id}
-                    onClick={() => setDurationFilter(durationFilter === bucket.id ? null : bucket.id)}
-                    style={{
-                      padding: "0.3rem 0.75rem",
-                      borderRadius: "999px",
-                      border: "1px solid",
-                      borderColor: durationFilter === bucket.id ? "#9F7AEA" : "#374151",
-                      background: durationFilter === bucket.id ? "rgba(159, 122, 234, 0.18)" : "#111827",
-                      color: "#E2E8F0",
-                      fontSize: "0.7rem",
-                      cursor: "pointer",
-                    }}
-                  >
-                    {bucket.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div style={{ marginBottom: "0.35rem" }}>
-              <p
-                style={{
-                  fontSize: "0.7rem",
-                  color: "#94A3B8",
-                  margin: 0,
-                  marginBottom: "0.2rem",
-                }}
-              >
-                Type
-              </p>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
-                {triggerTypes.map((type) => (
-                  <button
-                    key={type}
-                    onClick={() => {
-                      const next = typeFilter === type ? null : type;
-                      setTypeFilter(next);
-                      if (next !== "roleplay") {
-                        setRoleplayScene(null);
-                      }
-                    }}
-                    style={{
-                      padding: "0.3rem 0.75rem",
-                      borderRadius: "999px",
-                      border: "1px solid",
-                      borderColor: typeFilter === type ? "#9F7AEA" : "#374151",
-                      background: typeFilter === type ? "rgba(159, 122, 234, 0.18)" : "#111827",
-                      color: "#E2E8F0",
-                      fontSize: "0.7rem",
-                      cursor: "pointer",
-                    }}
-                  >
-                    {type}
-                  </button>
-                ))}
-              </div>
-              {typeFilter === "roleplay" && (
-                <div style={{ marginTop: "0.25rem" }}>
-                  <p
-                    style={{
-                      fontSize: "0.65rem",
-                      color: "#94A3B8",
-                      margin: 0,
-                      marginBottom: "0.15rem",
-                    }}
-                  >
-                    Roleplay scene
-                  </p>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
-                    {roleplaySceneOptions.map((scene) => (
-                      <button
-                        key={scene.id}
-                        onClick={() =>
-                          setRoleplayScene(roleplayScene === scene.id ? null : scene.id)
-                        }
-                        style={{
-                          padding: "0.25rem 0.7rem",
-                          borderRadius: "999px",
-                          border: "1px solid",
-                          borderColor:
-                            roleplayScene === scene.id ? "#9F7AEA" : "#374151",
-                          background:
-                            roleplayScene === scene.id
-                              ? "rgba(159, 122, 234, 0.18)"
-                              : "#111827",
-                          color: "#E2E8F0",
-                          fontSize: "0.7rem",
-                          cursor: "pointer",
-                        }}
-                      >
-                        {scene.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-            </div>
-            <div>
-              <p
-                style={{
-                  fontSize: "0.7rem",
-                  color: "#94A3B8",
-                  margin: 0,
-                  marginBottom: "0.2rem",
-                }}
-              >
-                Language
-              </p>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
-                {["en", "ja", "ko", "zh"].map((code) => (
-                  <button
-                    key={code}
-                    onClick={() => setLanguageFilter(languageFilter === code ? null : code)}
-                    style={{
-                      padding: "0.3rem 0.75rem",
-                      borderRadius: "999px",
-                      border: "1px solid",
-                      borderColor: languageFilter === code ? "#9F7AEA" : "#374151",
-                      background: languageFilter === code ? "rgba(159, 122, 234, 0.18)" : "#111827",
-                      color: "#E2E8F0",
-                      fontSize: "0.7rem",
-                      cursor: "pointer",
-                    }}
-                  >
-                    {languageLabels[code]}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <p style={{ fontSize: "0.6rem", letterSpacing: "0.3em", textTransform: "uppercase", color: "#94a3b8", margin: 0 }}>Filter by</p>
+            <p style={{ margin: "0.25rem 0 0", fontSize: "0.9rem", color: "#cbd5f5" }}>Tap a chip to narrow the leaderboard</p>
           </div>
-          <div style={{ marginTop: "0.25rem" }}>
-            <p
-              style={{
-                fontSize: "0.7rem",
-                color: "#94A3B8",
-                margin: 0,
-                marginBottom: "0.6rem",
-              }}
-            >
-              Push the current filtered weekly ranking to a private YouTube playlist.
-              First click authorizes with YouTube; second click updates the playlist.
-            </p>
+          {(typeFilter || languageFilter || durationFilter) && (
             <button
-              onClick={handlePushToYouTube}
+              onClick={() => {
+                setTypeFilter(null);
+                setLanguageFilter(null);
+                setDurationFilter(null);
+              }}
               style={{
+                border: "1px solid #475569",
+                background: "transparent",
+                color: "#cbd5f5",
+                padding: "0.4rem 0.9rem",
                 borderRadius: "999px",
-                border: "1px solid #B19CD9",
-                background: syncState === "syncing" ? "#9F7AEA" : "#B19CD9",
-                color: "#fff",
-                padding: "0.5rem 1.1rem",
-                fontSize: "0.8rem",
-                cursor: playlistRows.length && syncState !== "syncing" ? "pointer" : "not-allowed",
-                transition: "transform 150ms ease, box-shadow 150ms ease, background-color 150ms ease, border-color 150ms ease",
-              }}
-              disabled={!playlistRows.length || syncState === "syncing"}
-              onMouseEnter={(e) => {
-                if (!playlistRows.length || syncState === "syncing") return;
-                (e.currentTarget as HTMLButtonElement).style.transform = "scale(1.02)";
-                (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 0 18px rgba(159, 122, 234, 0.45)";
-                (e.currentTarget as HTMLButtonElement).style.backgroundColor = "#9F7AEA";
-                (e.currentTarget as HTMLButtonElement).style.borderColor = "#9F7AEA";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.transform = "scale(1.0)";
-                (e.currentTarget as HTMLButtonElement).style.boxShadow = "none";
-                (e.currentTarget as HTMLButtonElement).style.backgroundColor = syncState === "syncing" ? "#9F7AEA" : "#B19CD9";
-                (e.currentTarget as HTMLButtonElement).style.borderColor = "#B19CD9";
+                fontSize: "0.7rem",
+                cursor: "pointer",
               }}
             >
-              {syncState === "syncing" ? "Syncing..." : "Push to YouTube"}
+              Clear filters
             </button>
-            {syncMessage && (
-              <p
-                style={{
-                  fontSize: "0.75rem",
-                  marginTop: "0.5rem",
-                  color: syncState === "error" ? "#f87171" : "#34d399",
-                }}
+          )}
+        </div>
+        <div style={{ marginTop: "0.9rem" }}>
+          <p style={{ fontSize: "0.65rem", letterSpacing: "0.3em", textTransform: "uppercase", color: "#9ca3af", marginBottom: "0.3rem" }}>Duration</p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
+            {durationBuckets.map((bucket) => (
+              <button
+                key={bucket.id}
+                style={chipStyle(durationFilter === bucket.id)}
+                onClick={() => setDurationFilter(durationFilter === bucket.id ? null : bucket.id)}
               >
-                {syncMessage}
-              </p>
-            )}
+                {bucket.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div style={{ marginTop: "0.9rem" }}>
+          <p style={{ fontSize: "0.65rem", letterSpacing: "0.3em", textTransform: "uppercase", color: "#9ca3af", marginBottom: "0.3rem" }}>Type</p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
+            {rankingTypeOptions.map((type) => (
+              <button
+                key={type}
+                style={chipStyle(typeFilter === type)}
+                onClick={() => setTypeFilter(typeFilter === type ? null : type)}
+              >
+                {type}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div style={{ marginTop: "0.9rem" }}>
+          <p style={{ fontSize: "0.65rem", letterSpacing: "0.3em", textTransform: "uppercase", color: "#9ca3af", marginBottom: "0.3rem" }}>Language</p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
+            {languageOptions.map((code) => (
+              <button
+                key={code}
+                style={chipStyle(languageFilter === code)}
+                onClick={() => setLanguageFilter(languageFilter === code ? null : code)}
+              >
+                {languageLabels[code]}
+              </button>
+            ))}
           </div>
         </div>
       </div>
-      <div
-        className="space-y-8"
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-          gap: "1.5rem",
-        }}
-      >
-        {normalized.map((list) => (
-          <section key={list.name} style={{ marginBottom: "0" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem", alignItems: "center", marginBottom: "1.25rem" }}>
+        <span style={{ fontSize: "0.8rem", color: "#cbd5f5" }}>Export playlist ({playlistRows.length} videos)</span>
+        <button
+          onClick={copyPlaylist}
+          style={{
+            borderRadius: "999px",
+            border: "1px solid #475569",
+            background: "none",
+            color: "#fff",
+            padding: "0.35rem 0.85rem",
+            fontSize: "0.75rem",
+            cursor: playlistRows.length ? "pointer" : "not-allowed",
+          }}
+          disabled={!playlistRows.length}
+        >
+          {copyState === "copied" ? "Copied!" : "Copy URLs"}
+        </button>
+        <button
+          onClick={downloadCsv}
+          style={{
+            borderRadius: "999px",
+            border: "1px solid #475569",
+            background: "none",
+            color: "#fff",
+            padding: "0.35rem 0.85rem",
+            fontSize: "0.75rem",
+            cursor: playlistRows.length ? "pointer" : "not-allowed",
+          }}
+          disabled={!playlistRows.length}
+        >
+          Download CSV
+        </button>
+        <button
+          onClick={handlePushToYouTube}
+          style={{
+            borderRadius: "999px",
+            border: "1px solid #2563eb",
+            background: syncState === "syncing" ? "#1d4ed8" : "#2563eb",
+            color: "#fff",
+            padding: "0.35rem 0.85rem",
+            fontSize: "0.75rem",
+            cursor: playlistRows.length && syncState !== "syncing" ? "pointer" : "not-allowed",
+          }}
+          disabled={!playlistRows.length || syncState === "syncing"}
+        >
+          {syncState === "syncing" ? "Syncing..." : "Push to YouTube"}
+        </button>
+      </div>
+      {syncMessage && (
+        <p
+          style={{
+            fontSize: "0.75rem",
+            marginTop: "0.15rem",
+            color: syncState === "error" ? "#f87171" : "#34d399",
+          }}
+        >
+          {syncMessage}
+        </p>
+      )}
+      <div className="space-y-8">
+        {filtered.map((list) => (
+          <section key={list.name} style={{ marginBottom: "2rem" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
                 <h2 style={{ fontSize: "1.75rem", margin: 0 }}>{list.name}</h2>
-                <p style={{ color: "#94A3B8" }}>{list.description}</p>
+                <p style={{ color: "#94a3b8" }}>{list.description}</p>
               </div>
               <span style={{ fontSize: "0.9rem", color: "#94a3b8" }}>
                 {new Date(list.published_at).toLocaleDateString()}
               </span>
             </div>
-            <div style={{ marginTop: "0.75rem" }}>
+            <div style={{ marginTop: "1rem" }}>
               {list.items.map((item) => (
                 <article
                   key={item.video.youtube_id}
@@ -494,26 +418,15 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
                     display: "flex",
                     gap: "1rem",
                     marginBottom: "1rem",
-                    padding: "1.15rem",
+                    padding: "1rem",
                     borderRadius: "1.25rem",
-                    border: "1px solid #262832",
-                    background: "#16181E",
-                    boxShadow: "0 18px 40px rgba(0, 0, 0, 0.55)",
+                    border: "1px solid #1e293b",
+                    background: "rgba(15, 23, 42, 0.75)",
+                    boxShadow: "0 15px 40px rgba(2, 6, 23, 0.55)",
                     alignItems: "center",
-                    transition: "transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease",
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLElement).style.transform = "scale(1.02)";
-                    (e.currentTarget as HTMLElement).style.boxShadow = "0 22px 55px rgba(0, 0, 0, 0.75)";
-                    (e.currentTarget as HTMLElement).style.borderColor = "#2f3340";
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLElement).style.transform = "scale(1.0)";
-                    (e.currentTarget as HTMLElement).style.boxShadow = "0 18px 40px rgba(0, 0, 0, 0.55)";
-                    (e.currentTarget as HTMLElement).style.borderColor = "#262832";
                   }}
                 >
-                  <div style={{ minWidth: "140px", maxWidth: "170px" }}>
+                  <div style={{ minWidth: "120px", maxWidth: "140px" }}>
                     <img
                       src={item.video.thumbnail_url}
                       alt={item.video.title}
