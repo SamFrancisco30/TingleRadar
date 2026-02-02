@@ -23,6 +23,11 @@ export function ChannelFilterClient({ channels, duration, tagsParam, selectedCha
       .slice(0, 20);
   }, [channels, normalizedQuery]);
 
+  const appliedChannels = useMemo(
+    () => channels.filter((c) => selectedChannelIds.includes(c.channel_id)),
+    [channels, selectedChannelIds]
+  );
+
   const applyChannels = (channelIds: string[]) => {
     const params = new URLSearchParams();
     params.set("page", "1");
@@ -35,6 +40,44 @@ export function ChannelFilterClient({ channels, duration, tagsParam, selectedCha
 
   return (
     <div style={{ position: "relative", maxWidth: "360px", width: "100%" }}>
+      {/* Selected channel chips */}
+      {appliedChannels.length > 0 && (
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "0.35rem",
+            marginBottom: "0.4rem",
+          }}
+        >
+          {appliedChannels.map((c) => (
+            <button
+              key={c.channel_id}
+              type="button"
+              onClick={() => {
+                const next = selectedChannelIds.filter((id) => id !== c.channel_id);
+                applyChannels(next);
+              }}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.25rem",
+                padding: "0.2rem 0.55rem",
+                borderRadius: "999px",
+                border: "1px solid #4b5563",
+                background: "rgba(15, 23, 42, 0.9)",
+                color: "#e5e7eb",
+                fontSize: "0.7rem",
+                cursor: "pointer",
+              }}
+            >
+              <span>{c.channel_title}</span>
+              <span style={{ fontSize: "0.8rem", color: "#9ca3af" }}>×</span>
+            </button>
+          ))}
+        </div>
+      )}
+
       <div style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}>
         <input
           type="text"
