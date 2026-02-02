@@ -186,6 +186,8 @@ export default async function BrowsePage({
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
+        flexWrap: "wrap",
+        rowGap: "0.5rem",
         marginBottom: "1rem",
         marginTop: "0.5rem",
       }}
@@ -630,8 +632,6 @@ export default async function BrowsePage({
               </div>
             )}
           </div>
-
-          <Pagination />
 
           <div style={{ marginTop: "0.75rem" }}>
             {items.map((video) => (
