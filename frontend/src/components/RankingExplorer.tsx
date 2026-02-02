@@ -247,6 +247,21 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
 
   const playlistRows = useMemo(() => filtered[0]?.items ?? [], [filtered]);
 
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Track viewport size so we can make the inline player sticky only on mobile.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(max-width: 768px)");
+    const handleChange = (event: MediaQueryListEvent | MediaQueryList) => {
+      setIsMobile(event.matches);
+    };
+    // Initial value
+    handleChange(mq as any);
+    mq.addEventListener("change", handleChange as any);
+    return () => mq.removeEventListener("change", handleChange as any);
+  }, []);
+
   // Keep the currently playing video in sync with the filtered list,
   // but only when the inline player is visible.
   useEffect(() => {
@@ -615,13 +630,14 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
       {showInlinePlayer && currentVideoId && (
         <div
           style={{
-            position: "sticky",
-            top: 0,
-            zIndex: 40,
+            position: isMobile ? "sticky" : "relative",
+            top: isMobile ? 0 : undefined,
+            zIndex: isMobile ? 40 : 1,
             marginBottom: "1.5rem",
-            paddingTop: "0.5rem",
-            background:
-              "linear-gradient(180deg, rgba(5,7,10,0.98) 0%, rgba(5,7,10,0.9) 60%, rgba(5,7,10,0) 100%)",
+            paddingTop: isMobile ? "0.5rem" : 0,
+            background: isMobile
+              ? "linear-gradient(180deg, rgba(5,7,10,0.98) 0%, rgba(5,7,10,0.9) 60%, rgba(5,7,10,0) 100%)"
+              : "transparent",
           }}
         >
           <div
@@ -635,7 +651,7 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
             <div
               style={{
                 position: "relative",
-                paddingBottom: "56.25%",
+                paddingBottom: isMobile ? "56.25%" : "40%",
                 height: 0,
               }}
             >
