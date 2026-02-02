@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { ChannelSummary } from "./channels";
 
 interface Props {
@@ -13,6 +14,7 @@ interface Props {
 export function ChannelFilterClient({ channels, duration, tagsParam, selectedChannelIds }: Props) {
   const [query, setQuery] = useState<string>("");
   const [open, setOpen] = useState<boolean>(false);
+  const router = useRouter();
 
   const normalizedQuery = query.trim().toLowerCase();
 
@@ -35,7 +37,7 @@ export function ChannelFilterClient({ channels, duration, tagsParam, selectedCha
     if (tagsParam) params.set("tags", tagsParam);
     if (channelIds.length > 0) params.set("channels", channelIds.join(","));
     setOpen(false);
-    window.location.href = `/browse?${params.toString()}`;
+    router.push(`/browse?${params.toString()}`, { scroll: false });
   };
 
   return (
