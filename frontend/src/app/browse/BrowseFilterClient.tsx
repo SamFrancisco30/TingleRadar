@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ChannelFilterClient } from "./ChannelFilterClient";
 import type { ChannelSummary } from "./channels";
@@ -73,6 +73,14 @@ export function BrowseFilterClient({ channels }: BrowseFilterClientProps) {
 
   const params = useMemo(() => new URLSearchParams(searchParams.toString()), [searchParams]);
 
+  const [filtersCollapsed, setFiltersCollapsed] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(max-width: 768px)");
+    setFiltersCollapsed(mq.matches);
+  }, []);
+
   const filters = useMemo(() => parseFiltersFromSearchParams(params), [params]);
 
   const channelsParam = params.get("channels") || "";
@@ -101,6 +109,15 @@ export function BrowseFilterClient({ channels }: BrowseFilterClientProps) {
     filters.languageFilters.length > 0 ||
     selectedChannelIds.length > 0 ||
     !!sort;
+
+  const activeCount =
+    (filters.duration ? 1 : 0) +
+    filters.triggerFilters.length +
+    filters.talkingStyleFilters.length +
+    filters.roleplayScenes.length +
+    filters.languageFilters.length +
+    (selectedChannelIds.length ? 1 : 0) +
+    (sort && sort !== "published_desc" ? 1 : 0);
 
   const updateSearchParams = (nextFilters: FilterState) => {
     const nextParams = new URLSearchParams(searchParams.toString());
@@ -160,6 +177,7 @@ export function BrowseFilterClient({ channels }: BrowseFilterClientProps) {
           justifyContent: "space-between",
           alignItems: "flex-end",
           marginBottom: "0.6rem",
+          gap: "0.75rem",
         }}
       >
         <div>
@@ -176,12 +194,35 @@ export function BrowseFilterClient({ channels }: BrowseFilterClientProps) {
           </p>
           <p style={{ margin: "0.25rem 0 0", fontSize: "0.9rem", color: "#cbd5f5" }}>
             Narrow by channels, duration, triggers, language, and more.
+            {activeCount > 0 && (
+              <span style={{ fontSize: "0.8rem", color: "#9ca3af" }}>
+                {" · "}
+                {activeCount} active
+              </span>
+            )}
           </p>
         </div>
-        {hasAnyFilter && (
+        <div style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}>
+          {hasAnyFilter && (
+            <button
+              type="button"
+              onClick={handleClearFilters}
+              style={{
+                border: "1px solid #475569",
+                background: "transparent",
+                color: "#cbd5f5",
+                padding: "0.35rem 0.8rem",
+                borderRadius: "999px",
+                fontSize: "0.7rem",
+                cursor: "pointer",
+              }}
+            >
+              Clear
+            </button>
+          )}
           <button
             type="button"
-            onClick={handleClearFilters}
+            onClick={() => setFiltersCollapsed((v) => !v)}
             style={{
               border: "1px solid #475569",
               background: "transparent",
@@ -190,87 +231,94 @@ export function BrowseFilterClient({ channels }: BrowseFilterClientProps) {
               borderRadius: "999px",
               fontSize: "0.7rem",
               cursor: "pointer",
+              whiteSpace: "nowrap",
             }}
           >
-            Clear filters
+            {filtersCollapsed ? "Show filters" : "Hide filters"}
           </button>
-        )}
-      </div>
-
-      {/* Channel */}
-      <div style={{ marginTop: "0.4rem" }}>
-        <p
-          style={{
-            fontSize: "0.65rem",
-            letterSpacing: "0.3em",
-            textTransform: "uppercase",
-            color: "#9ca3af",
-            marginBottom: "0.3rem",
-          }}
-        >
-          Channel
-        </p>
-        <ChannelFilterClient
-          channels={channels}
-          duration={filters.duration}
-          tagsParam={selectedTags.join(",")}
-          selectedChannelIds={selectedChannelIds}
-        />
-      </div>
-
-      {/* Sort */}
-      <div style={{ marginTop: "0.4rem" }}>
-        <p
-          style={{
-            fontSize: "0.65rem",
-            letterSpacing: "0.3em",
-            textTransform: "uppercase",
-            color: "#9ca3af",
-            marginBottom: "0.3rem",
-          }}
-        >
-          Sort by
-        </p>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
-          {[
-            { id: "published_desc", label: "Newest" },
-            { id: "views_desc", label: "Most viewed" },
-            { id: "likes_desc", label: "Most liked" },
-          ].map((opt) => {
-            const active = (sort || "published_desc") === opt.id;
-            const nextParams = new URLSearchParams(searchParams.toString());
-            if (opt.id === "published_desc") {
-              nextParams.delete("sort");
-            } else {
-              nextParams.set("sort", opt.id);
-            }
-            nextParams.set("page", "1");
-            return (
-              <button
-                key={opt.id}
-                type="button"
-                onClick={() => router.push(`${pathname}?${nextParams.toString()}`, { scroll: false })}
-                style={{
-                  padding: "0.35rem 0.75rem",
-                  borderRadius: "999px",
-                  border: "1px solid",
-                  borderColor: active ? "#2563eb" : "#475569",
-                  background: active ? "#2563eb" : "#0f172a",
-                  color: active ? "#fff" : "#e2e8f0",
-                  fontSize: "0.7rem",
-                  textDecoration: "none",
-                  cursor: "pointer",
-                }}
-              >
-                {opt.label}
-              </button>
-            );
-          })}
         </div>
       </div>
 
-      {/* Shared duration + trigger + talking style + roleplay scene + language */}
-      <FilterPanel state={filters} onChange={updateSearchParams} />
+      {!filtersCollapsed && (
+        <>
+          {/* Channel */}
+          <div style={{ marginTop: "0.4rem" }}>
+            <p
+              style={{
+                fontSize: "0.65rem",
+                letterSpacing: "0.3em",
+                textTransform: "uppercase",
+                color: "#9ca3af",
+                marginBottom: "0.3rem",
+              }}
+            >
+              Channel
+            </p>
+            <ChannelFilterClient
+              channels={channels}
+              duration={filters.duration}
+              tagsParam={selectedTags.join(",")}
+              selectedChannelIds={selectedChannelIds}
+            />
+          </div>
+
+          {/* Sort */}
+          <div style={{ marginTop: "0.4rem" }}>
+            <p
+              style={{
+                fontSize: "0.65rem",
+                letterSpacing: "0.3em",
+                textTransform: "uppercase",
+                color: "#9ca3af",
+                marginBottom: "0.3rem",
+              }}
+            >
+              Sort by
+            </p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
+              {[
+                { id: "published_desc", label: "Newest" },
+                { id: "views_desc", label: "Most viewed" },
+                { id: "likes_desc", label: "Most liked" },
+              ].map((opt) => {
+                const active = (sort || "published_desc") === opt.id;
+                const nextParams = new URLSearchParams(searchParams.toString());
+                if (opt.id === "published_desc") {
+                  nextParams.delete("sort");
+                } else {
+                  nextParams.set("sort", opt.id);
+                }
+                nextParams.set("page", "1");
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() =>
+                      router.push(`${pathname}?${nextParams.toString()}`, { scroll: false })
+                    }
+                    style={{
+                      padding: "0.35rem 0.75rem",
+                      borderRadius: "999px",
+                      border: "1px solid",
+                      borderColor: active ? "#2563eb" : "#475569",
+                      background: active ? "#2563eb" : "0f172a",
+                      color: active ? "#fff" : "#e2e8f0",
+                      fontSize: "0.7rem",
+                      textDecoration: "none",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Shared duration + trigger + talking style + roleplay scene + language */}
+          <FilterPanel state={filters} onChange={updateSearchParams} />
+        </>
+      )}
     </div>
   );
 }

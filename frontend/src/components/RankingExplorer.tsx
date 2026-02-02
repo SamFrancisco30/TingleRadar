@@ -359,6 +359,22 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
     filters.roleplayScenes.length > 0 ||
     filters.languageFilters.length > 0;
 
+  const [filtersCollapsed, setFiltersCollapsed] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(max-width: 768px)");
+    const isMobileInitial = mq.matches;
+    setFiltersCollapsed(isMobileInitial);
+  }, []);
+
+  const activeCount =
+    (filters.duration ? 1 : 0) +
+    filters.triggerFilters.length +
+    filters.talkingStyleFilters.length +
+    filters.roleplayScenes.length +
+    filters.languageFilters.length;
+
   return (
     <div>
       <div
@@ -371,7 +387,14 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
           backdropFilter: "blur(10px)",
         }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-end",
+            gap: "0.75rem",
+          }}
+        >
           <div>
             <p
               style={{
@@ -386,35 +409,58 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
             </p>
             <p style={{ margin: "0.25rem 0 0", fontSize: "0.9rem", color: "#cbd5f5" }}>
               Tap a chip to narrow the leaderboard
+              {activeCount > 0 && (
+                <span style={{ fontSize: "0.8rem", color: "#9ca3af" }}>
+                  {" · "}
+                  {activeCount} active
+                </span>
+              )}
             </p>
           </div>
-          {hasAnyFilter && (
+          <div style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}>
+            {hasAnyFilter && (
+              <button
+                onClick={() =>
+                  setFilters({
+                    duration: null,
+                    triggerFilters: [],
+                    talkingStyleFilters: [],
+                    roleplayScenes: [],
+                    languageFilters: [],
+                  })
+                }
+                style={{
+                  border: "1px solid #475569",
+                  background: "transparent",
+                  color: "#cbd5f5",
+                  padding: "0.35rem 0.8rem",
+                  borderRadius: "999px",
+                  fontSize: "0.7rem",
+                  cursor: "pointer",
+                }}
+              >
+                Clear
+              </button>
+            )}
             <button
-              onClick={() =>
-                setFilters({
-                  duration: null,
-                  triggerFilters: [],
-                  talkingStyleFilters: [],
-                  roleplayScenes: [],
-                  languageFilters: [],
-                })
-              }
+              onClick={() => setFiltersCollapsed((v) => !v)}
               style={{
                 border: "1px solid #475569",
                 background: "transparent",
                 color: "#cbd5f5",
-                padding: "0.4rem 0.9rem",
+                padding: "0.35rem 0.8rem",
                 borderRadius: "999px",
                 fontSize: "0.7rem",
                 cursor: "pointer",
+                whiteSpace: "nowrap",
               }}
             >
-              Clear filters
+              {filtersCollapsed ? "Show filters" : "Hide filters"}
             </button>
-          )}
+          </div>
         </div>
 
-        <FilterPanel state={filters} onChange={setFilters} />
+        {!filtersCollapsed && <FilterPanel state={filters} onChange={setFilters} />}
       </div>
 
       <div
