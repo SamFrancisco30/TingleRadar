@@ -406,13 +406,9 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
               }}
             >
               Filter by
-            </p>
-            <p style={{ margin: "0.25rem 0 0", fontSize: "0.9rem", color: "#cbd5f5" }}>
-              Tap a chip to narrow the leaderboard
               {activeCount > 0 && (
-                <span style={{ fontSize: "0.8rem", color: "#9ca3af" }}>
-                  {" · "}
-                  {activeCount} active
+                <span style={{ fontSize: "0.7rem", color: "#9ca3af", marginLeft: "0.5rem" }}>
+                  · {activeCount} active
                 </span>
               )}
             </p>
