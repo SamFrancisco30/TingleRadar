@@ -76,15 +76,6 @@ async function fetchVideos(
   return data;
 }
 
-function formatDuration(seconds?: number | null): string {
-  if (!seconds) return "Unknown";
-  const mins = Math.round(seconds / 60);
-  if (mins < 60) return `${mins} min`;
-  const h = Math.floor(mins / 60);
-  const m = mins % 60;
-  return m ? `${h}h ${m}m` : `${h}h`;
-}
-
 const durationBuckets = [
   { id: "short", label: "2-5 min" },
   { id: "medium", label: "5-15 min" },
