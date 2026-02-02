@@ -250,6 +250,7 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
   const [isMobile, setIsMobile] = useState(false);
   const [isMiniPlayerDesktop, setIsMiniPlayerDesktop] = useState(false);
   const inlinePlayerWrapperRef = useRef<HTMLDivElement | null>(null);
+  const inlinePlayerAnchorRef = useRef<{ top: number; height: number } | null>(null);
 
   // Track viewport size so we can adapt inline player behavior for mobile vs desktop.
   useEffect(() => {
@@ -270,22 +271,46 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
     if (typeof window === "undefined") return;
     if (isMobile || !showInlinePlayer) {
       setIsMiniPlayerDesktop(false);
+      inlinePlayerAnchorRef.current = null;
       return;
     }
     const el = inlinePlayerWrapperRef.current;
     if (!el) return;
 
-    const handleScroll = () => {
+    const updateAnchor = () => {
       const rect = el.getBoundingClientRect();
-      // When the inline player is entirely above the viewport, enable mini-player.
-      const isAboveViewport = rect.bottom <= 0;
-      setIsMiniPlayerDesktop(isAboveViewport);
+      inlinePlayerAnchorRef.current = {
+        top: rect.top + window.scrollY,
+        height: rect.height,
+      };
+    };
+
+    if (!isMiniPlayerDesktop) {
+      updateAnchor();
+    }
+
+    const handleScroll = () => {
+      const anchor = inlinePlayerAnchorRef.current;
+      if (!anchor) return;
+      const threshold = anchor.top + anchor.height;
+      setIsMiniPlayerDesktop(window.scrollY >= threshold);
+    };
+
+    const handleResize = () => {
+      if (!isMiniPlayerDesktop) {
+        updateAnchor();
+      }
+      handleScroll();
     };
 
     handleScroll();
     window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [isMobile, showInlinePlayer]);
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [isMobile, showInlinePlayer, isMiniPlayerDesktop]);
 
   // Keep the currently playing video in sync with the filtered list,
   // but only when the inline player is visible.
