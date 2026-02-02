@@ -246,13 +246,13 @@ export default async function BrowsePage({
           method="get"
           style={{ display: "flex", alignItems: "center", gap: "0.3rem", marginLeft: "0.5rem" }}
         >
-          <span style={{ fontSize: "0.75rem", color: "#9ca3af" }}>Go to</span>
           <input
             type="number"
             name="page"
             min={1}
             max={totalPages}
             defaultValue={currentPage}
+            placeholder="Pg"
             style={{
               width: "3rem",
               padding: "0.2rem 0.35rem",
