@@ -615,73 +615,84 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
       {showInlinePlayer && currentVideoId && (
         <div
           style={{
+            position: "sticky",
+            top: 0,
+            zIndex: 40,
             marginBottom: "1.5rem",
-            borderRadius: "1.25rem",
-            overflow: "hidden",
-            border: "1px solid #1f2937",
-            background: "#020617",
+            paddingTop: "0.5rem",
+            background:
+              "linear-gradient(180deg, rgba(5,7,10,0.98) 0%, rgba(5,7,10,0.9) 60%, rgba(5,7,10,0) 100%)",
           }}
         >
           <div
             style={{
-              position: "relative",
-              paddingBottom: "56.25%",
-              height: 0,
+              borderRadius: "1.25rem",
+              overflow: "hidden",
+              border: "1px solid #1f2937",
+              background: "#020617",
             }}
           >
             <div
-              ref={playerContainerRef}
               style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                width: "100%",
-                height: "100%",
+                position: "relative",
+                paddingBottom: "56.25%",
+                height: 0,
               }}
-            />
-          </div>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              padding: "0.5rem 0.75rem 0.75rem",
-              alignItems: "center",
-            }}
-          >
-            <span style={{ fontSize: "0.75rem", color: "#9ca3af" }}>
-              Now playing {currentIndex + 1} / {playlistRows.length}
-            </span>
-            <div style={{ display: "flex", gap: "0.5rem" }}>
-              <button
-                onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
-                disabled={currentIndex <= 0}
+            >
+              <div
+                ref={playerContainerRef}
                 style={{
-                  padding: "0.25rem 0.6rem",
-                  fontSize: "0.75rem",
-                  borderRadius: "999px",
-                  border: "1px solid #4b5563",
-                  background: currentIndex <= 0 ? "#020617" : "#020617",
-                  color: currentIndex <= 0 ? "#4b5563" : "#e5e7eb",
-                  cursor: currentIndex <= 0 ? "not-allowed" : "pointer",
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: "100%",
+                  height: "100%",
                 }}
-              >
-                Prev
-              </button>
-              <button
-                onClick={() => setCurrentIndex((i) => Math.min(playlistRows.length - 1, i + 1))}
-                disabled={currentIndex >= playlistRows.length - 1}
-                style={{
-                  padding: "0.25rem 0.6rem",
-                  fontSize: "0.75rem",
-                  borderRadius: "999px",
-                  border: "1px solid #4b5563",
-                  background: currentIndex >= playlistRows.length - 1 ? "#020617" : "#020617",
-                  color: currentIndex >= playlistRows.length - 1 ? "#4b5563" : "#e5e7eb",
-                  cursor: currentIndex >= playlistRows.length - 1 ? "not-allowed" : "pointer",
-                }}
-              >
-                Next
-              </button>
+              />
+            </div>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                padding: "0.5rem 0.75rem 0.75rem",
+                alignItems: "center",
+              }}
+            >
+              <span style={{ fontSize: "0.75rem", color: "#9ca3af" }}>
+                Now playing {currentIndex + 1} / {playlistRows.length}
+              </span>
+              <div style={{ display: "flex", gap: "0.5rem" }}>
+                <button
+                  onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
+                  disabled={currentIndex <= 0}
+                  style={{
+                    padding: "0.25rem 0.6rem",
+                    fontSize: "0.75rem",
+                    borderRadius: "999px",
+                    border: "1px solid #4b5563",
+                    background: currentIndex <= 0 ? "#020617" : "#020617",
+                    color: currentIndex <= 0 ? "#4b5563" : "#e5e7eb",
+                    cursor: currentIndex <= 0 ? "not-allowed" : "pointer",
+                  }}
+                >
+                  Prev
+                </button>
+                <button
+                  onClick={() => setCurrentIndex((i) => Math.min(playlistRows.length - 1, i + 1))}
+                  disabled={currentIndex >= playlistRows.length - 1}
+                  style={{
+                    padding: "0.25rem 0.6rem",
+                    fontSize: "0.75rem",
+                    borderRadius: "999px",
+                    border: "1px solid #4b5563",
+                    background: currentIndex >= playlistRows.length - 1 ? "#020617" : "#020617",
+                    color: currentIndex >= playlistRows.length - 1 ? "#4b5563" : "#e5e7eb",
+                    cursor: currentIndex >= playlistRows.length - 1 ? "not-allowed" : "pointer",
+                  }}
+                >
+                  Next
+                </button>
+              </div>
             </div>
           </div>
         </div>
