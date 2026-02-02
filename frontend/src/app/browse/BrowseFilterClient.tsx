@@ -1,0 +1,269 @@
+"use client";
+
+import { useMemo } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { ChannelFilterClient } from "./ChannelFilterClient";
+import type { ChannelSummary } from "./channels";
+import {
+  FilterPanel,
+  FilterState,
+  triggerTypeOptions,
+  talkingStyleOptions,
+  roleplaySceneOptions,
+} from "../../components/FilterPanel";
+
+function parseFiltersFromSearchParams(searchParams: URLSearchParams): FilterState {
+  const duration = searchParams.get("duration");
+  const tagsParam = searchParams.get("tags") || "";
+  const languageParam = searchParams.get("language") || "";
+
+  const tagList = tagsParam
+    ? tagsParam
+        .split(",")
+        .map((x) => x.trim())
+        .filter(Boolean)
+    : [];
+
+  const triggerFilters = tagList.filter((t) => triggerTypeOptions.includes(t));
+  const talkingStyleFilters = tagList.filter((t) => talkingStyleOptions.includes(t));
+  const roleplayScenes = tagList.filter((t) => roleplaySceneOptions.includes(t));
+
+  const languageFilters = languageParam ? [languageParam] : [];
+
+  return {
+    duration: duration || null,
+    triggerFilters,
+    talkingStyleFilters,
+    roleplayScenes,
+    languageFilters,
+  };
+}
+
+function buildTagsFromFilters(filters: FilterState, existingTags: string[]): string[] {
+  const base = existingTags.filter(
+    (t) =>
+      !triggerTypeOptions.includes(t) &&
+      !talkingStyleOptions.includes(t) &&
+      !roleplaySceneOptions.includes(t)
+  );
+
+  return [
+    ...base,
+    ...filters.triggerFilters,
+    ...filters.talkingStyleFilters,
+    ...filters.roleplayScenes,
+  ];
+}
+
+export type BrowseFilterClientProps = {
+  channels: ChannelSummary[];
+};
+
+export function BrowseFilterClient({ channels }: BrowseFilterClientProps) {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const params = useMemo(() => new URLSearchParams(searchParams.toString()), [searchParams]);
+
+  const filters = useMemo(() => parseFiltersFromSearchParams(params), [params]);
+
+  const channelsParam = params.get("channels") || "";
+  const selectedChannelIds = channelsParam
+    ? channelsParam
+        .split(",")
+        .map((x) => x.trim())
+        .filter(Boolean)
+    : [];
+
+  const sort = params.get("sort");
+  const tagsParam = params.get("tags") || "";
+
+  const selectedTags = tagsParam
+    ? tagsParam
+        .split(",")
+        .map((x) => x.trim())
+        .filter(Boolean)
+    : [];
+
+  const hasAnyFilter =
+    filters.duration !== null ||
+    filters.triggerFilters.length > 0 ||
+    filters.talkingStyleFilters.length > 0 ||
+    filters.roleplayScenes.length > 0 ||
+    filters.languageFilters.length > 0 ||
+    selectedChannelIds.length > 0 ||
+    !!sort;
+
+  const updateSearchParams = (nextFilters: FilterState) => {
+    const nextParams = new URLSearchParams(searchParams.toString());
+
+    // Duration
+    if (nextFilters.duration) {
+      nextParams.set("duration", nextFilters.duration);
+    } else {
+      nextParams.delete("duration");
+    }
+
+    // Language: single param, take first language filter if any
+    if (nextFilters.languageFilters[0]) {
+      nextParams.set("language", nextFilters.languageFilters[0]);
+    } else {
+      nextParams.delete("language");
+    }
+
+    // Tags: merge with any unknown tags
+    const existingTags = selectedTags;
+    const mergedTags = buildTagsFromFilters(nextFilters, existingTags);
+    if (mergedTags.length) {
+      nextParams.set("tags", mergedTags.join(","));
+    } else {
+      nextParams.delete("tags");
+    }
+
+    nextParams.set("page", "1");
+
+    router.push(`${pathname}?${nextParams.toString()}`);
+  };
+
+  const handleClearFilters = () => {
+    const nextParams = new URLSearchParams(searchParams.toString());
+    nextParams.delete("duration");
+    nextParams.delete("tags");
+    nextParams.delete("language");
+    nextParams.delete("sort");
+    nextParams.delete("page");
+    router.push(`${pathname}?${nextParams.toString()}`);
+  };
+
+  return (
+    <div
+      style={{
+        borderRadius: "1.25rem",
+        border: "1px solid #1f2937",
+        background: "rgba(15, 23, 42, 0.75)",
+        padding: "1rem",
+        marginBottom: "1rem",
+        backdropFilter: "blur(8px)",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-end",
+          marginBottom: "0.6rem",
+        }}
+      >
+        <div>
+          <p
+            style={{
+              fontSize: "0.6rem",
+              letterSpacing: "0.3em",
+              textTransform: "uppercase",
+              color: "#94a3b8",
+              margin: 0,
+            }}
+          >
+            Filter catalog
+          </p>
+          <p style={{ margin: "0.25rem 0 0", fontSize: "0.9rem", color: "#cbd5f5" }}>
+            Narrow by channels, duration, triggers, language, and more.
+          </p>
+        </div>
+        {hasAnyFilter && (
+          <button
+            type="button"
+            onClick={handleClearFilters}
+            style={{
+              border: "1px solid #475569",
+              background: "transparent",
+              color: "#cbd5f5",
+              padding: "0.35rem 0.8rem",
+              borderRadius: "999px",
+              fontSize: "0.7rem",
+              cursor: "pointer",
+            }}
+          >
+            Clear filters
+          </button>
+        )}
+      </div>
+
+      {/* Channel */}
+      <div style={{ marginTop: "0.4rem" }}>
+        <p
+          style={{
+            fontSize: "0.65rem",
+            letterSpacing: "0.3em",
+            textTransform: "uppercase",
+            color: "#9ca3af",
+            marginBottom: "0.3rem",
+          }}
+        >
+          Channel
+        </p>
+        <ChannelFilterClient
+          channels={channels}
+          duration={filters.duration}
+          tagsParam={selectedTags.join(",")}
+          selectedChannelIds={selectedChannelIds}
+        />
+      </div>
+
+      {/* Sort */}
+      <div style={{ marginTop: "0.4rem" }}>
+        <p
+          style={{
+            fontSize: "0.65rem",
+            letterSpacing: "0.3em",
+            textTransform: "uppercase",
+            color: "#9ca3af",
+            marginBottom: "0.3rem",
+          }}
+        >
+          Sort by
+        </p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
+          {[
+            { id: "published_desc", label: "Newest" },
+            { id: "views_desc", label: "Most viewed" },
+            { id: "likes_desc", label: "Most liked" },
+          ].map((opt) => {
+            const active = (sort || "published_desc") === opt.id;
+            const nextParams = new URLSearchParams(searchParams.toString());
+            if (opt.id === "published_desc") {
+              nextParams.delete("sort");
+            } else {
+              nextParams.set("sort", opt.id);
+            }
+            nextParams.set("page", "1");
+            return (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => router.push(`${pathname}?${nextParams.toString()}`)}
+                style={{
+                  padding: "0.35rem 0.75rem",
+                  borderRadius: "999px",
+                  border: "1px solid",
+                  borderColor: active ? "#2563eb" : "#475569",
+                  background: active ? "#2563eb" : "#0f172a",
+                  color: active ? "#fff" : "#e2e8f0",
+                  fontSize: "0.7rem",
+                  textDecoration: "none",
+                  cursor: "pointer",
+                }}
+              >
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Shared duration + trigger + talking style + roleplay scene + language */}
+      <FilterPanel state={filters} onChange={updateSearchParams} />
+    </div>
+  );
+}

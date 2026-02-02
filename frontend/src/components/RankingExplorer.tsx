@@ -2,12 +2,13 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { VideoCard } from "./VideoCard";
-
-const durationBuckets = [
-  { id: "short", label: "2-5 min", min: 120, max: 300 },
-  { id: "medium", label: "5-15 min", min: 300, max: 900 },
-  { id: "long", label: "15+ min", min: 900 },
-];
+import {
+  FilterPanel,
+  FilterState,
+  durationBuckets,
+  languageLabels,
+  displayTag,
+} from "./FilterPanel";
 
 // Keyword-based fallback rules for when the backend doesn't provide computed_tags.
 // Keys here are internal tag ids (snake_case) so they align with backend tagging.
@@ -30,90 +31,11 @@ const typeKeywords: Record<string, string[]> = {
   roleplay: ["roleplay", "r.p", "场景", "girlfriend roleplay", "doctor roleplay"],
 };
 
-// Internal tags that should appear as Type filter chips.
-const triggerTypeOptions: string[] = [
-  "tapping",
-  "scratching",
-  "crinkling",
-  "brushing",
-  "ear_cleaning",
-  "mouth_sounds",
-  "white_noise",
-  "binaural",
-  "visual_asmr",
-  "layered",
-  "roleplay",
-];
-
-// Internal tags that should appear as Talking Style filter chips.
-const talkingStyleOptions: string[] = [
-  "whisper",
-  "soft_spoken",
-  "no_talking",
-];
-
-// Roleplay scenes (only shown when roleplay trigger is active).
-const roleplaySceneOptions: string[] = [
-  "rp_haircut",
-  "rp_cranial",
-  "rp_dentist",
-];
-
-// Human-friendly labels for internal tag ids.
-const typeLabels: Record<string, string> = {
-  tapping: "Tapping",
-  scratching: "Scratching",
-  crinkling: "Crinkling",
-  brushing: "Brushing",
-  ear_cleaning: "Ear cleaning",
-  mouth_sounds: "Mouth sounds",
-  white_noise: "White noise",
-  binaural: "Binaural",
-  visual_asmr: "Visual ASMR",
-  layered: "Layered sounds",
-  whisper: "Whisper",
-  soft_spoken: "Soft spoken",
-  no_talking: "No talking",
-  roleplay: "Roleplay",
-  rp_haircut: "Haircut",
-  rp_cranial: "Cranial nerve exam",
-  rp_dentist: "Dentist",
-};
-
 const languageDetectors: [string, RegExp][] = [
   ["ja", /[\u3040-\u30ff\u31f0-\u31ff]/],
   ["ko", /[\uac00-\ud7af]/],
   ["zh", /[\u4e00-\u9fff]/],
 ];
-
-const languageLabels: Record<string, string> = {
-  en: "English",
-  ja: "Japanese",
-  ko: "Korean",
-  zh: "Chinese",
-};
-
-// Display helper: convert internal tag ids (snake_case) to human-friendly labels.
-const displayTag = (tag: string): string => {
-  if (typeLabels[tag]) return typeLabels[tag];
-  // Fallback: split on underscore and capitalize first letter of each word.
-  return tag
-    .split("_")
-    .map((part) => (part ? part[0].toUpperCase() + part.slice(1) : ""))
-    .join(" ");
-};
-
-const chipStyle = (active?: boolean) => ({
-  padding: "0.35rem 0.75rem",
-  borderRadius: "999px",
-  border: "1px solid",
-  borderColor: active ? "#059669" : "#475569",
-  background: active ? "#059669" : "#0f172a",
-  color: active ? "#fff" : "#e2e8f0",
-  fontSize: "0.7rem",
-  cursor: "pointer",
-  transition: "border-color 150ms ease, background 150ms ease",
-});
 
 type RankingItem = {
   rank: number;
@@ -169,21 +91,21 @@ const filterByDuration = (item: RankingItem, bucketId: string) => {
     return true;
   }
 
-  if (bucket.max) {
-    return duration >= bucket.min && duration < bucket.max;
+  if ((bucket as any).max) {
+    return duration >= (bucket as any).min && duration < (bucket as any).max;
   }
 
-  return duration >= bucket.min;
+  return duration >= (bucket as any).min;
 };
 
-const languageOptions = ["en", "ja", "ko", "zh"];
-
 export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
-  const [triggerFilters, setTriggerFilters] = useState<string[]>([]);
-  const [talkingStyleFilters, setTalkingStyleFilters] = useState<string[]>([]);
-  const [languageFilters, setLanguageFilters] = useState<string[]>([]);
-  const [roleplayScenes, setRoleplayScenes] = useState<string[]>([]);
-  const [durationFilter, setDurationFilter] = useState<string | null>(null);
+  const [filters, setFilters] = useState<FilterState>({
+    duration: null,
+    triggerFilters: [],
+    talkingStyleFilters: [],
+    roleplayScenes: [],
+    languageFilters: [],
+  });
   const [syncState, setSyncState] = useState<"idle" | "syncing" | "success" | "error">("idle");
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [showInlinePlayer, setShowInlinePlayer] = useState(false);
@@ -203,7 +125,7 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
             ...item,
             type_tags: typeTags,
             language: detectLanguage(item.video),
-          };
+          } as RankingItem & { type_tags: string[]; language: string };
         }),
       })),
     [rankings]
@@ -213,7 +135,9 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
     () =>
       normalized.map((list) => ({
         ...list,
-        items: list.items.filter((item) => {
+        items: list.items.filter((item: any) => {
+          const { triggerFilters, talkingStyleFilters, roleplayScenes, languageFilters, duration } = filters;
+
           // Trigger Type: OR within, AND with others
           if (triggerFilters.length > 0 && !triggerFilters.some((tag) => item.type_tags.includes(tag))) {
             return false;
@@ -238,13 +162,13 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
             return false;
           }
           // Duration: single bucket
-          if (durationFilter && !filterByDuration(item, durationFilter)) {
+          if (duration && !filterByDuration(item, duration)) {
             return false;
           }
           return true;
         }),
       })),
-    [normalized, triggerFilters, talkingStyleFilters, roleplayScenes, languageFilters, durationFilter]
+    [normalized, filters]
   );
 
   const playlistRows = useMemo(() => filtered[0]?.items ?? [], [filtered]);
@@ -256,7 +180,7 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
     if (typeof window === "undefined") return;
     const mq = window.matchMedia("(max-width: 768px)");
     const handleChange = (event: MediaQueryListEvent | MediaQueryList) => {
-      setIsMobile(event.matches);
+      setIsMobile((event as MediaQueryList).matches ?? (event as MediaQueryListEvent).matches);
     };
     // Initial value
     handleChange(mq as any);
@@ -408,7 +332,7 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
       const payload = {
         title: playlistName,
         description: playlistDescription,
-        video_ids: playlistRows.map((item) => item.video.youtube_id),
+        video_ids: playlistRows.map((item: any) => item.video.youtube_id),
       };
       const syncResponse = await fetch(`${API_BASE}/playlists/weekly/sync`, {
         method: "POST",
@@ -428,30 +352,53 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
     }
   };
 
+  const hasAnyFilter =
+    filters.duration !== null ||
+    filters.triggerFilters.length > 0 ||
+    filters.talkingStyleFilters.length > 0 ||
+    filters.roleplayScenes.length > 0 ||
+    filters.languageFilters.length > 0;
+
   return (
     <div>
-      <div style={{
-        borderRadius: "1.5rem",
-        border: "1px solid #1f2937",
-        background: "rgba(15, 23, 42, 0.6)",
-        padding: "1.25rem",
-        marginBottom: "1rem",
-        backdropFilter: "blur(10px)",
-      }}>
+      <div
+        style={{
+          borderRadius: "1.5rem",
+          border: "1px solid #1f2937",
+          background: "rgba(15, 23, 42, 0.6)",
+          padding: "1.25rem",
+          marginBottom: "1rem",
+          backdropFilter: "blur(10px)",
+        }}
+      >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
           <div>
-            <p style={{ fontSize: "0.6rem", letterSpacing: "0.3em", textTransform: "uppercase", color: "#94a3b8", margin: 0 }}>Filter by</p>
-            <p style={{ margin: "0.25rem 0 0", fontSize: "0.9rem", color: "#cbd5f5" }}>Tap a chip to narrow the leaderboard</p>
-          </div>
-          {(triggerFilters.length || talkingStyleFilters.length || roleplayScenes.length || languageFilters.length || durationFilter) && (
-            <button
-              onClick={() => {
-                setTriggerFilters([]);
-                setTalkingStyleFilters([]);
-                setRoleplayScenes([]);
-                setLanguageFilters([]);
-                setDurationFilter(null);
+            <p
+              style={{
+                fontSize: "0.6rem",
+                letterSpacing: "0.3em",
+                textTransform: "uppercase",
+                color: "#94a3b8",
+                margin: 0,
               }}
+            >
+              Filter by
+            </p>
+            <p style={{ margin: "0.25rem 0 0", fontSize: "0.9rem", color: "#cbd5f5" }}>
+              Tap a chip to narrow the leaderboard
+            </p>
+          </div>
+          {hasAnyFilter && (
+            <button
+              onClick={() =>
+                setFilters({
+                  duration: null,
+                  triggerFilters: [],
+                  talkingStyleFilters: [],
+                  roleplayScenes: [],
+                  languageFilters: [],
+                })
+              }
               style={{
                 border: "1px solid #475569",
                 background: "transparent",
@@ -466,117 +413,22 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
             </button>
           )}
         </div>
-        <div style={{ marginTop: "0.9rem" }}>
-          <p style={{ fontSize: "0.65rem", letterSpacing: "0.3em", textTransform: "uppercase", color: "#9ca3af", marginBottom: "0.3rem" }}>Duration</p>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
-            {durationBuckets.map((bucket) => (
-              <button
-                key={bucket.id}
-                style={chipStyle(durationFilter === bucket.id)}
-                onClick={() => setDurationFilter(durationFilter === bucket.id ? null : bucket.id)}
-              >
-                {bucket.label}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div style={{ marginTop: "0.9rem" }}>
-          <p style={{ fontSize: "0.65rem", letterSpacing: "0.3em", textTransform: "uppercase", color: "#9ca3af", marginBottom: "0.3rem" }}>Trigger Type</p>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
-            {triggerTypeOptions.map((type) => {
-              const active = triggerFilters.includes(type);
-              return (
-                <button
-                  key={type}
-                  style={chipStyle(active)}
-                  onClick={() =>
-                    setTriggerFilters((prev) =>
-                      prev.includes(type)
-                        ? prev.filter((t) => t !== type)
-                        : [...prev, type]
-                    )
-                  }
-                >
-                  {typeLabels[type] || type}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-        <div style={{ marginTop: "0.9rem" }}>
-          <p style={{ fontSize: "0.65rem", letterSpacing: "0.3em", textTransform: "uppercase", color: "#9ca3af", marginBottom: "0.3rem" }}>Talking style</p>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
-            {talkingStyleOptions.map((style) => {
-              const active = talkingStyleFilters.includes(style);
-              return (
-                <button
-                  key={style}
-                  style={chipStyle(active)}
-                  onClick={() =>
-                    setTalkingStyleFilters((prev) =>
-                      prev.includes(style)
-                        ? prev.filter((s) => s !== style)
-                        : [...prev, style]
-                    )
-                  }
-                >
-                  {typeLabels[style] || displayTag(style)}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-        {triggerFilters.includes("roleplay") && (
-          <div style={{ marginTop: "0.9rem" }}>
-            <p style={{ fontSize: "0.65rem", letterSpacing: "0.3em", textTransform: "uppercase", color: "#9ca3af", marginBottom: "0.3rem" }}>Roleplay scene</p>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
-              {roleplaySceneOptions.map((scene) => {
-                const active = roleplayScenes.includes(scene);
-                return (
-                  <button
-                    key={scene}
-                    style={chipStyle(active)}
-                    onClick={() =>
-                      setRoleplayScenes((prev) =>
-                        prev.includes(scene)
-                          ? prev.filter((s) => s !== scene)
-                          : [...prev, scene]
-                      )
-                    }
-                  >
-                    {typeLabels[scene] || displayTag(scene)}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-        <div style={{ marginTop: "0.9rem" }}>
-          <p style={{ fontSize: "0.65rem", letterSpacing: "0.3em", textTransform: "uppercase", color: "#9ca3af", marginBottom: "0.3rem" }}>Language</p>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
-            {languageOptions.map((code) => {
-              const active = languageFilters.includes(code);
-              return (
-                <button
-                  key={code}
-                  style={chipStyle(active)}
-                  onClick={() =>
-                    setLanguageFilters((prev) =>
-                      prev.includes(code)
-                        ? prev.filter((c) => c !== code)
-                        : [...prev, code]
-                    )
-                  }
-                >
-                  {languageLabels[code]}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+
+        <FilterPanel state={filters} onChange={setFilters} />
       </div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem", alignItems: "center", marginBottom: "1.25rem" }}>
-        <span style={{ fontSize: "0.8rem", color: "#cbd5f5" }}>Playlist size: {playlistRows.length} videos</span>
+
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "0.75rem",
+          alignItems: "center",
+          marginBottom: "1.25rem",
+        }}
+      >
+        <span style={{ fontSize: "0.8rem", color: "#cbd5f5" }}>
+          Playlist size: {playlistRows.length} videos
+        </span>
         <button
           onClick={handlePushToYouTube}
           style={{
@@ -729,35 +581,36 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
               </span>
             </div>
             <div style={{ marginTop: "1rem" }}>
-              {list.items.map((item, idx) => {
+              {list.items.map((item: any, idx: number) => {
                 const isActive =
                   showInlinePlayer &&
                   playlistRows[currentIndex] &&
                   playlistRows[currentIndex].video.youtube_id === item.video.youtube_id;
                 return (
-                <VideoCard
-                  key={item.video.youtube_id}
-                  youtubeId={item.video.youtube_id}
-                  title={item.video.title}
-                  channelTitle={item.video.channel_title}
-                  thumbnailUrl={item.video.thumbnail_url}
-                  viewCount={item.video.view_count}
-                  likeCount={item.video.like_count}
-                  durationSeconds={item.video.duration}
-                  publishedAt={item.video.published_at}
-                  rank={item.rank}
-                  typeTags={item.type_tags.map((tag) => displayTag(tag))}
-                  languageLabel={languageLabels[item.language] || "English"}
-                  extraChips={[]}
-                  active={isActive}
-                  onClick={() => {
-                    if (!showInlinePlayer) {
-                      setShowInlinePlayer(true);
-                    }
-                    setCurrentIndex(idx);
-                  }}
-                />
-              )})}
+                  <VideoCard
+                    key={item.video.youtube_id}
+                    youtubeId={item.video.youtube_id}
+                    title={item.video.title}
+                    channelTitle={item.video.channel_title}
+                    thumbnailUrl={item.video.thumbnail_url}
+                    viewCount={item.video.view_count}
+                    likeCount={item.video.like_count}
+                    durationSeconds={item.video.duration}
+                    publishedAt={item.video.published_at}
+                    rank={item.rank}
+                    typeTags={item.type_tags.map((tag: string) => displayTag(tag))}
+                    languageLabel={languageLabels[item.language] || "English"}
+                    extraChips={[]}
+                    active={isActive}
+                    onClick={() => {
+                      if (!showInlinePlayer) {
+                        setShowInlinePlayer(true);
+                      }
+                      setCurrentIndex(idx);
+                    }}
+                  />
+                );
+              })}
             </div>
           </section>
         ))}
