@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 const durationBuckets = [
   { id: "short", label: "2-5 min", min: 120, max: 300 },
@@ -187,6 +187,8 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
   const [showInlinePlayer, setShowInlinePlayer] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [currentVideoId, setCurrentVideoId] = useState<string | null>(null);
+  const playerContainerRef = useRef<HTMLDivElement | null>(null);
+  const playerRef = useRef<any | null>(null);
 
   const normalized = useMemo(
     () =>
@@ -260,12 +262,89 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
     const clampedIndex = Math.min(currentIndex, playlistRows.length - 1);
     if (clampedIndex !== currentIndex) {
       setCurrentIndex(clampedIndex);
+      return;
     }
     const nextId = playlistRows[clampedIndex].video.youtube_id;
     if (nextId !== currentVideoId) {
       setCurrentVideoId(nextId);
     }
   }, [playlistRows, currentIndex, currentVideoId, showInlinePlayer]);
+
+  // Initialize and control the YouTube IFrame Player API for inline playback.
+  useEffect(() => {
+    if (!showInlinePlayer || !currentVideoId) {
+      return;
+    }
+
+    const loadPlayer = () => {
+      const YT = (window as any).YT;
+      if (!YT || !YT.Player || !playerContainerRef.current) return;
+
+      if (!playerRef.current) {
+        playerRef.current = new YT.Player(playerContainerRef.current, {
+          videoId: currentVideoId,
+          playerVars: {
+            autoplay: 1,
+            rel: 0,
+          },
+          events: {
+            onStateChange: (event: any) => {
+              const ENDED = (window as any).YT?.PlayerState?.ENDED;
+              if (ENDED != null && event.data === ENDED) {
+                // Auto advance to next video if available.
+                setCurrentIndex((idx) => {
+                  if (idx < playlistRows.length - 1) {
+                    return idx + 1;
+                  }
+                  return idx;
+                });
+              }
+            },
+          },
+        });
+      } else {
+        // If player exists, just load the new video id.
+        try {
+          playerRef.current.loadVideoById(currentVideoId);
+        } catch {
+          // no-op
+        }
+      }
+    };
+
+    if (!(window as any).YT || !(window as any).YT.Player) {
+      // Load the IFrame API script once.
+      const existingScript = document.getElementById("youtube-iframe-api");
+      if (!existingScript) {
+        const tag = document.createElement("script");
+        tag.src = "https://www.youtube.com/iframe_api";
+        tag.id = "youtube-iframe-api";
+        document.body.appendChild(tag);
+      }
+      const prev = (window as any).onYouTubeIframeAPIReady;
+      (window as any).onYouTubeIframeAPIReady = () => {
+        if (typeof prev === "function") prev();
+        loadPlayer();
+      };
+    } else {
+      loadPlayer();
+    }
+
+    // We intentionally do not destroy the player here so controls remain responsive
+    // while the player is visible. Cleanup happens when the component unmounts.
+    return () => {
+      // Do nothing on dependency change; player is managed globally while visible.
+    };
+  }, [showInlinePlayer, currentVideoId, playlistRows.length]);
+
+  // Cleanup on unmount.
+  useEffect(() => {
+    return () => {
+      if (playerRef.current && typeof playerRef.current.destroy === "function") {
+        playerRef.current.destroy();
+      }
+    };
+  }, []);
 
   const playlistName = filtered[0]?.name ?? "TingleRadar Weekly Playlist";
   const playlistDescription = filtered[0]?.description ?? "Weekly ASMR playlist curated by TingleRadar.";
@@ -544,18 +623,14 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
               height: 0,
             }}
           >
-            <iframe
-              src={`https://www.youtube.com/embed/${currentVideoId}?autoplay=1&rel=0`}
-              title="TingleRadar player"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              allowFullScreen
+            <div
+              ref={playerContainerRef}
               style={{
                 position: "absolute",
                 top: 0,
                 left: 0,
                 width: "100%",
                 height: "100%",
-                border: 0,
               }}
             />
           </div>
