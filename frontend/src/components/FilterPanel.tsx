@@ -204,42 +204,6 @@ export function FilterPanel({ state, onChange }: FilterPanelProps) {
         </div>
       </div>
 
-      {/* Talking style */}
-      <div style={{ marginTop: "0.9rem" }}>
-        <p
-          style={{
-            fontSize: "0.65rem",
-            letterSpacing: "0.3em",
-            textTransform: "uppercase",
-            color: "#9ca3af",
-            marginBottom: "0.3rem",
-          }}
-        >
-          Talking style
-        </p>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
-          {talkingStyleOptions.map((style) => {
-            const active = talkingStyleFilters.includes(style);
-            return (
-              <button
-                key={style}
-                style={chipStyle(active)}
-                onClick={() => {
-                  onChange({
-                    ...state,
-                    talkingStyleFilters: active
-                      ? talkingStyleFilters.filter((s) => s !== style)
-                      : [...talkingStyleFilters, style],
-                  });
-                }}
-              >
-                {displayTag(style)}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
       {/* Roleplay scenes: show when Roleplay is selected OR any scene is active */}
       {(triggerFilters.includes("roleplay") || roleplayScenes.length > 0) && (
         <div style={{ marginTop: "0.9rem" }}>
@@ -277,6 +241,42 @@ export function FilterPanel({ state, onChange }: FilterPanelProps) {
           </div>
         </div>
       )}
+
+      {/* Talking style */}
+      <div style={{ marginTop: "0.9rem" }}>
+        <p
+          style={{
+            fontSize: "0.65rem",
+            letterSpacing: "0.3em",
+            textTransform: "uppercase",
+            color: "#9ca3af",
+            marginBottom: "0.3rem",
+          }}
+        >
+          Talking style
+        </p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
+          {talkingStyleOptions.map((style) => {
+            const active = talkingStyleFilters.includes(style);
+            return (
+              <button
+                key={style}
+                style={chipStyle(active)}
+                onClick={() => {
+                  onChange({
+                    ...state,
+                    talkingStyleFilters: active
+                      ? talkingStyleFilters.filter((s) => s !== style)
+                      : [...talkingStyleFilters, style],
+                  });
+                }}
+              >
+                {displayTag(style)}
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       {/* Language */}
       <div style={{ marginTop: "0.9rem" }}>
