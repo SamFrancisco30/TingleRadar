@@ -46,7 +46,7 @@ async function fetchVideos(
 
   const params = new URLSearchParams();
   params.set("page", String(page));
-  params.set("page_size", "50");
+  params.set("page_size", "30");
   if (options?.duration) {
     params.set("duration_bucket", options.duration);
   }
