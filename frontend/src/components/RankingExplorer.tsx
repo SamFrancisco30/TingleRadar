@@ -721,13 +721,14 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
                     alignItems: "center",
                   }}
                 >
-                  <div className="video-card-thumbnail" style={{ minWidth: "120px", maxWidth: "140px" }}>
+                  <div className="video-card-thumbnail" style={{ minWidth: "180px", maxWidth: "220px" }}>
                     <img
                       src={item.video.thumbnail_url}
                       alt={item.video.title}
                       style={{
                         width: "100%",
-                        height: "74px",
+                        height: "auto",
+                        aspectRatio: "16 / 9",
                         objectFit: "cover",
                         borderRadius: "1rem",
                         filter: "brightness(0.9)",

@@ -9,13 +9,19 @@ body {
   background-color: #05070a;
 }
 
-/* Mobile layout tweaks for video cards */
+/* Layout tweaks for video cards (desktop + mobile) */
 .video-card {
   display: flex;
 }
 
 .video-card-thumbnail {
   display: block;
+}
+
+.video-card-thumbnail img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
 }
 
 @media (max-width: 640px) {
@@ -28,11 +34,5 @@ body {
     min-width: 0;
     max-width: none;
     width: 100%;
-  }
-
-  .video-card-thumbnail img {
-    width: 100%;
-    height: auto;
-    aspect-ratio: 16 / 9;
   }
 }
