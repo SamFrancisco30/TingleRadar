@@ -124,6 +124,7 @@ type RankingItem = {
     thumbnail_url: string;
     view_count: number;
     like_count: number;
+    published_at?: string;
     description?: string | null;
     duration?: number | null;
     tags?: string[] | null;
