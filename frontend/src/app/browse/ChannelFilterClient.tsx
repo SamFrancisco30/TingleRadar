@@ -31,11 +31,16 @@ export function ChannelFilterClient({ channels, duration, tagsParam, selectedCha
   );
 
   const applyChannels = (channelIds: string[]) => {
-    const params = new URLSearchParams();
+    // Start from current query string so other filters (language, sort, etc.) are preserved.
+    const params = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
     params.set("page", "1");
     if (duration) params.set("duration", duration);
+    else params.delete("duration");
     if (tagsParam) params.set("tags", tagsParam);
+    else params.delete("tags");
     if (channelIds.length > 0) params.set("channels", channelIds.join(","));
+    else params.delete("channels");
+
     setOpen(false);
     router.push(`/browse?${params.toString()}`, { scroll: false });
   };
