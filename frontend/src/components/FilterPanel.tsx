@@ -151,13 +151,12 @@ export function FilterPanel({ state, onChange }: FilterPanelProps) {
                 key={type}
                 style={chipStyle(active)}
                 onClick={() => {
-                  const next = active
-                    ? triggerFilters.filter((t) => t !== type)
-                    : [...triggerFilters, type];
                   // If roleplay is turned off, also clear roleplay scenes.
                   onChange({
                     ...state,
-                    triggerFilters: next,
+                    triggerFilters: active
+                      ? triggerFilters.filter((t) => t !== type)
+                      : [...triggerFilters, type],
                     roleplayScenes:
                       type === "roleplay" && active
                         ? []
@@ -230,12 +229,11 @@ export function FilterPanel({ state, onChange }: FilterPanelProps) {
                   key={scene}
                   style={chipStyle(active)}
                   onClick={() => {
-                    const next = active
-                      ? roleplayScenes.filter((s) => s !== scene)
-                      : [...roleplayScenes, scene];
                     onChange({
                       ...state,
-                      roleplayScenes: next,
+                      roleplayScenes: active
+                        ? roleplayScenes.filter((s) => s !== scene)
+                        : [...roleplayScenes, scene],
                     });
                   }}
                 >
@@ -268,12 +266,11 @@ export function FilterPanel({ state, onChange }: FilterPanelProps) {
                 key={code}
                 style={chipStyle(active)}
                 onClick={() => {
-                  const next = active
-                    ? languageFilters.filter((c) => c !== code)
-                    : [...languageFilters, code];
                   onChange({
                     ...state,
-                    languageFilters: next,
+                    languageFilters: active
+                      ? languageFilters.filter((c) => c !== code)
+                      : [...languageFilters, code],
                   });
                 }}
               >
