@@ -28,11 +28,39 @@ function formatDuration(seconds?: number | null): string {
   return m ? `${h}h ${m}m` : `${h}h`;
 }
 
-function formatDate(dateStr?: string | null): string {
+function formatRelativeDate(dateStr?: string | null): string {
   if (!dateStr) return "";
   const d = new Date(dateStr);
   if (Number.isNaN(d.getTime())) return "";
-  return d.toLocaleDateString();
+  const now = new Date();
+  const diffMs = now.getTime() - d.getTime();
+  const sec = Math.max(0, Math.floor(diffMs / 1000));
+  const min = Math.floor(sec / 60);
+  const hour = Math.floor(min / 60);
+  const day = Math.floor(hour / 24);
+
+  if (day <= 0) {
+    if (hour <= 0) return "Just now";
+    if (hour === 1) return "1 hour ago";
+    return `${hour} hours ago`;
+  }
+  if (day < 7) {
+    if (day === 1) return "1 day ago";
+    return `${day} days ago`;
+  }
+  const week = Math.floor(day / 7);
+  if (week < 5) {
+    if (week === 1) return "1 week ago";
+    return `${week} weeks ago`;
+  }
+  const month = Math.floor(day / 30);
+  if (month < 12) {
+    if (month === 1) return "1 month ago";
+    return `${month} months ago`;
+  }
+  const year = Math.floor(day / 365);
+  if (year === 1) return "1 year ago";
+  return `${year} years ago`;
 }
 
 export const VideoCard: React.FC<VideoCardProps> = ({
@@ -119,7 +147,7 @@ export const VideoCard: React.FC<VideoCardProps> = ({
         <div style={{ color: "#94a3b8", marginTop: "0.25rem", fontSize: "0.9rem" }}>{channelTitle}</div>
         <div style={{ fontSize: "0.85rem", color: "#9ca3af", marginTop: "0.15rem" }}>
           Views {viewCount.toLocaleString()} · Likes {likeCount.toLocaleString()} · {formatDuration(durationSeconds)}
-          {publishedAt && ` · Published ${formatDate(publishedAt)}`}
+          {publishedAt && ` · Published ${formatRelativeDate(publishedAt)}`}
         </div>
 
         {Boolean((typeTags && typeTags.length) || languageLabel || (extraChips && extraChips.length)) && (
