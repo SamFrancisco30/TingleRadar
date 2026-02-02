@@ -248,6 +248,8 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
   const playlistRows = useMemo(() => filtered[0]?.items ?? [], [filtered]);
 
   const [isMobile, setIsMobile] = useState(false);
+  const [isMiniPlayerDesktop, setIsMiniPlayerDesktop] = useState(false);
+  const inlinePlayerWrapperRef = useRef<HTMLDivElement | null>(null);
 
   // Track viewport size so we can adapt inline player behavior for mobile vs desktop.
   useEffect(() => {
@@ -261,6 +263,29 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
     mq.addEventListener("change", handleChange as any);
     return () => mq.removeEventListener("change", handleChange as any);
   }, []);
+
+  // For desktop, switch to a bottom-right mini-player when the inline
+  // player scrolls out of view. On mobile we always keep it at the top.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (isMobile || !showInlinePlayer) {
+      setIsMiniPlayerDesktop(false);
+      return;
+    }
+    const el = inlinePlayerWrapperRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        setIsMiniPlayerDesktop(!entry.isIntersecting);
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [isMobile, showInlinePlayer]);
 
   // Keep the currently playing video in sync with the filtered list,
   // but only when the inline player is visible.
@@ -629,13 +654,24 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
 
       {showInlinePlayer && currentVideoId && (
         <div
+          ref={inlinePlayerWrapperRef}
           style={{
-            position: "sticky",
-            top: 0,
+            position: isMobile
+              ? "sticky"
+              : isMiniPlayerDesktop
+              ? "fixed"
+              : "relative",
+            top: isMobile ? 0 : isMiniPlayerDesktop ? undefined : 0,
+            bottom: !isMobile && isMiniPlayerDesktop ? "1.5rem" : undefined,
+            right: !isMobile && isMiniPlayerDesktop ? "1.5rem" : undefined,
+            width: !isMobile && isMiniPlayerDesktop ? "320px" : "100%",
+            maxWidth: !isMobile && isMiniPlayerDesktop ? "360px" : "100%",
             zIndex: 40,
-            marginBottom: "1.5rem",
-            paddingTop: "0.5rem",
-            background: "linear-gradient(180deg, rgba(5,7,10,0.98) 0%, rgba(5,7,10,0.9) 60%, rgba(5,7,10,0) 100%)",
+            marginBottom: isMiniPlayerDesktop ? 0 : "1.5rem",
+            paddingTop: isMobile ? "0.5rem" : 0,
+            background: isMobile
+              ? "linear-gradient(180deg, rgba(5,7,10,0.98) 0%, rgba(5,7,10,0.9) 60%, rgba(5,7,10,0) 100%)"
+              : "transparent",
           }}
         >
           <div
@@ -649,7 +685,7 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
             <div
               style={{
                 position: "relative",
-                paddingBottom: isMobile ? "56.25%" : "28%",
+                paddingBottom: isMiniPlayerDesktop ? "56.25%" : isMobile ? "56.25%" : "40%",
                 height: 0,
               }}
             >
