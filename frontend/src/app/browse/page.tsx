@@ -83,6 +83,54 @@ export default async function BrowsePage({
   const hasNext = currentPage * page_size < total;
   const hasPrev = currentPage > 1;
 
+  const Pagination = () => (
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: "1rem",
+        marginTop: "0.5rem",
+      }}
+    >
+      <span style={{ fontSize: "0.85rem", color: "#cbd5f5" }}>
+        Page {currentPage} · {items.length} videos · total {total}
+      </span>
+      <div style={{ display: "flex", gap: "0.5rem" }}>
+        <a
+          href={hasPrev ? `/browse?page=${currentPage - 1}` : "#"}
+          style={{
+            padding: "0.35rem 0.85rem",
+            borderRadius: "999px",
+            border: "1px solid #4b5563",
+            background: "#020617",
+            color: hasPrev ? "#e5e7eb" : "#4b5563",
+            fontSize: "0.75rem",
+            pointerEvents: hasPrev ? "auto" : "none",
+            textDecoration: "none",
+          }}
+        >
+          Prev
+        </a>
+        <a
+          href={hasNext ? `/browse?page=${currentPage + 1}` : "#"}
+          style={{
+            padding: "0.35rem 0.85rem",
+            borderRadius: "999px",
+            border: "1px solid #4b5563",
+            background: "#020617",
+            color: hasNext ? "#e5e7eb" : "#4b5563",
+            fontSize: "0.75rem",
+            pointerEvents: hasNext ? "auto" : "none",
+            textDecoration: "none",
+          }}
+        >
+          Next
+        </a>
+      </div>
+    </div>
+  );
+
   return (
     <div
       style={{
@@ -112,50 +160,7 @@ export default async function BrowsePage({
             boxShadow: "0 20px 80px rgba(5, 6, 15, 0.45)",
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "1rem",
-            }}
-          >
-            <span style={{ fontSize: "0.85rem", color: "#cbd5f5" }}>
-              Showing page {currentPage} · {items.length} videos · total {total}
-            </span>
-            <div style={{ display: "flex", gap: "0.5rem" }}>
-              <a
-                href={hasPrev ? `/browse?page=${currentPage - 1}` : "#"}
-                style={{
-                  padding: "0.35rem 0.85rem",
-                  borderRadius: "999px",
-                  border: "1px solid #4b5563",
-                  background: "#020617",
-                  color: hasPrev ? "#e5e7eb" : "#4b5563",
-                  fontSize: "0.75rem",
-                  pointerEvents: hasPrev ? "auto" : "none",
-                  textDecoration: "none",
-                }}
-              >
-                Prev
-              </a>
-              <a
-                href={hasNext ? `/browse?page=${currentPage + 1}` : "#"}
-                style={{
-                  padding: "0.35rem 0.85rem",
-                  borderRadius: "999px",
-                  border: "1px solid #4b5563",
-                  background: "#020617",
-                  color: hasNext ? "#e5e7eb" : "#4b5563",
-                  fontSize: "0.75rem",
-                  pointerEvents: hasNext ? "auto" : "none",
-                  textDecoration: "none",
-                }}
-              >
-                Next
-              </a>
-            </div>
-          </div>
+          <Pagination />
 
           <div style={{ marginTop: "0.75rem" }}>
             {items.map((video) => (
@@ -165,22 +170,23 @@ export default async function BrowsePage({
                   display: "flex",
                   gap: "1rem",
                   marginBottom: "1rem",
-                  padding: "0.9rem 1rem",
+                  padding: "1rem",
                   borderRadius: "1.25rem",
                   border: "1px solid #1e293b",
                   background: "rgba(15, 23, 42, 0.75)",
-                  boxShadow: "0 10px 30px rgba(2, 6, 23, 0.5)",
+                  boxShadow: "0 15px 40px rgba(2, 6, 23, 0.55)",
                   alignItems: "center",
                 }}
               >
-                <div style={{ minWidth: "120px", maxWidth: "140px" }}>
+                <div style={{ minWidth: "180px", maxWidth: "220px" }}>
                   {video.thumbnail_url ? (
                     <img
                       src={video.thumbnail_url}
                       alt={video.title}
                       style={{
                         width: "100%",
-                        height: "74px",
+                        height: "auto",
+                        aspectRatio: "16 / 9",
                         objectFit: "cover",
                         borderRadius: "1rem",
                         filter: "brightness(0.9)",
@@ -190,7 +196,7 @@ export default async function BrowsePage({
                     <div
                       style={{
                         width: "100%",
-                        height: "74px",
+                        height: "120px",
                         borderRadius: "1rem",
                         background: "#020617",
                       }}
@@ -205,17 +211,17 @@ export default async function BrowsePage({
                     rel="noreferrer"
                     style={{
                       color: "#c084fc",
-                      fontSize: "1.05rem",
+                      fontSize: "1.2rem",
                       fontWeight: 600,
                       textDecoration: "none",
                     }}
                   >
                     {video.title}
                   </a>
-                  <div style={{ color: "#94a3b8", marginTop: "0.15rem", fontSize: "0.85rem" }}>
+                  <div style={{ color: "#94a3b8", marginTop: "0.25rem", fontSize: "0.9rem" }}>
                     {video.channel_title}
                   </div>
-                  <div style={{ fontSize: "0.8rem", color: "#9ca3af", marginTop: "0.15rem" }}>
+                  <div style={{ fontSize: "0.85rem", color: "#9ca3af", marginTop: "0.15rem" }}>
                     Views {video.view_count.toLocaleString()} · Likes {video.like_count.toLocaleString()} ·
                     {" "}
                     {formatDuration(video.duration)}
@@ -224,10 +230,10 @@ export default async function BrowsePage({
                   {video.computed_tags && video.computed_tags.length > 0 && (
                     <div
                       style={{
-                        marginTop: "0.35rem",
+                        marginTop: "0.5rem",
                         display: "flex",
                         flexWrap: "wrap",
-                        gap: "0.3rem",
+                        gap: "0.35rem",
                       }}
                     >
                       {video.computed_tags.map((tag) => (
@@ -237,7 +243,7 @@ export default async function BrowsePage({
                             fontSize: "0.65rem",
                             borderRadius: "999px",
                             border: "1px solid #475569",
-                            padding: "0.18rem 0.55rem",
+                            padding: "0.2rem 0.6rem",
                             color: "#cbd5f5",
                           }}
                         >
@@ -259,6 +265,8 @@ export default async function BrowsePage({
               </p>
             )}
           </div>
+
+          <Pagination />
         </div>
       </div>
     </div>
