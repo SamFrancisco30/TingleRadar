@@ -608,6 +608,8 @@ export default async function BrowsePage({
                       ...(selectedChannelIds.length
                         ? { channels: selectedChannelIds.join(",") }
                         : {}),
+                      ...(language ? { language } : {}),
+                      ...(sort && sort !== "published_desc" ? { sort } : {}),
                     }).toString();
                     return (
                       <a
@@ -631,6 +633,57 @@ export default async function BrowsePage({
                 </div>
               </div>
             )}
+
+            {/* Language */}
+            <div style={{ marginTop: "0.8rem" }}>
+              <p
+                style={{
+                  fontSize: "0.65rem",
+                  letterSpacing: "0.3em",
+                  textTransform: "uppercase",
+                  color: "#9ca3af",
+                  marginBottom: "0.3rem",
+                }}
+              >
+                Language
+              </p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
+                {["en", "ja", "ko", "zh"].map((code) => {
+                  const active = language === code;
+                  const href = new URLSearchParams({
+                    page: "1",
+                    ...(duration ? { duration } : {}),
+                    ...(tagsParam ? { tags: tagsParam } : {}),
+                    ...(selectedChannelIds.length
+                      ? { channels: selectedChannelIds.join(",") }
+                      : {}),
+                    ...(sort && sort !== "published_desc" ? { sort } : {}),
+                    ...(active ? {} : { language: code }),
+                  }).toString();
+                  return (
+                    <a
+                      key={code}
+                      href={`/browse?${href}`}
+                      style={{
+                        padding: "0.35rem 0.75rem",
+                        borderRadius: "999px",
+                        border: "1px solid",
+                        borderColor: active ? "#059669" : "#475569",
+                        background: active ? "#059669" : "#0f172a",
+                        color: active ? "#fff" : "#e2e8f0",
+                        fontSize: "0.7rem",
+                        textDecoration: "none",
+                      }}
+                    >
+                      {code === "en" && "English"}
+                      {code === "ja" && "Japanese"}
+                      {code === "ko" && "Korean"}
+                      {code === "zh" && "Chinese"}
+                    </a>
+                  );
+                })}
+              </div>
+            </div>
           </div>
 
           <div style={{ marginTop: "0.75rem" }}>
