@@ -122,7 +122,7 @@ export const VideoCard: React.FC<VideoCardProps> = ({
           {publishedAt && ` · Published ${formatDate(publishedAt)}`}
         </div>
 
-        {((typeTags && typeTags.length) || languageLabel || (extraChips && extraChips.length)) && (
+        {Boolean((typeTags && typeTags.length) || languageLabel || (extraChips && extraChips.length)) && (
           <div
             style={{
               marginTop: "0.5rem",
