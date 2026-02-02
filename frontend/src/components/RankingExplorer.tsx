@@ -184,6 +184,7 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
   const [durationFilter, setDurationFilter] = useState<string | null>(null);
   const [syncState, setSyncState] = useState<"idle" | "syncing" | "success" | "error">("idle");
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
+  const [showInlinePlayer, setShowInlinePlayer] = useState(false);
   const [currentVideoId, setCurrentVideoId] = useState<string | null>(null);
 
   const normalized = useMemo(
@@ -243,8 +244,12 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
 
   const playlistRows = useMemo(() => filtered[0]?.items ?? [], [filtered]);
 
-  // Keep the currently playing video in sync with the filtered list.
+  // Keep the currently playing video in sync with the filtered list,
+  // but only when the inline player is visible.
   useEffect(() => {
+    if (!showInlinePlayer) {
+      return;
+    }
     if (!playlistRows.length) {
       setCurrentVideoId(null);
       return;
@@ -254,7 +259,7 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
     if (!stillExists) {
       setCurrentVideoId(playlistRows[0].video.youtube_id);
     }
-  }, [playlistRows, currentVideoId]);
+  }, [playlistRows, currentVideoId, showInlinePlayer]);
 
   const playlistName = filtered[0]?.name ?? "TingleRadar Weekly Playlist";
   const playlistDescription = filtered[0]?.description ?? "Weekly ASMR playlist curated by TingleRadar.";
@@ -479,6 +484,30 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
         >
           {syncState === "syncing" ? "Syncing..." : "Push to YouTube"}
         </button>
+        <button
+          onClick={() => {
+            if (!playlistRows.length) return;
+            if (!showInlinePlayer) {
+              setCurrentVideoId(playlistRows[0].video.youtube_id);
+              setShowInlinePlayer(true);
+            } else {
+              setShowInlinePlayer(false);
+            }
+          }}
+          style={{
+            borderRadius: "999px",
+            border: "1px solid #10b981",
+            background: showInlinePlayer ? "#047857" : "transparent",
+            color: showInlinePlayer ? "#ecfdf5" : "#6ee7b7",
+            padding: "0.35rem 0.85rem",
+            fontSize: "0.75rem",
+            cursor: playlistRows.length ? "pointer" : "not-allowed",
+            opacity: playlistRows.length ? 1 : 0.4,
+          }}
+          disabled={!playlistRows.length}
+        >
+          {showInlinePlayer ? "Hide inline player" : "Play filtered list here"}
+        </button>
       </div>
       {syncMessage && (
         <p
@@ -492,7 +521,7 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
         </p>
       )}
 
-      {currentVideoId && (
+      {showInlinePlayer && currentVideoId && (
         <div
           style={{
             marginBottom: "1.5rem",
@@ -541,11 +570,10 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
             </div>
             <div style={{ marginTop: "1rem" }}>
               {list.items.map((item) => {
-                const isActive = item.video.youtube_id === currentVideoId;
+                const isActive = showInlinePlayer && item.video.youtube_id === currentVideoId;
                 return (
                 <article
                   key={item.video.youtube_id}
-                  onClick={() => setCurrentVideoId(item.video.youtube_id)}
                   style={{
                     display: "flex",
                     gap: "1rem",
@@ -556,7 +584,6 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
                     background: isActive ? "rgba(22, 163, 74, 0.16)" : "rgba(15, 23, 42, 0.75)",
                     boxShadow: "0 15px 40px rgba(2, 6, 23, 0.55)",
                     alignItems: "center",
-                    cursor: "pointer",
                   }}
                 >
                   <div style={{ minWidth: "120px", maxWidth: "140px" }}>
