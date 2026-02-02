@@ -58,7 +58,7 @@ export function NavBar() {
               letterSpacing: "0.08em",
               textTransform: "uppercase",
               padding: "0.25rem 0.4rem",
-              borderBottom: `2px solid ${!isBrowse ? "#f97316" : "transparent"}`,
+              borderBottom: `2px solid ${!isBrowse ? "#c084fc" : "transparent"}`,
             }}
           >
             Weekly Board
@@ -72,7 +72,7 @@ export function NavBar() {
               letterSpacing: "0.08em",
               textTransform: "uppercase",
               padding: "0.25rem 0.4rem",
-              borderBottom: `2px solid ${isBrowse ? "#f97316" : "transparent"}`,
+              borderBottom: `2px solid ${isBrowse ? "#c084fc" : "transparent"}`,
             }}
           >
             Browse All

@@ -580,8 +580,8 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
           onClick={handlePushToYouTube}
           style={{
             borderRadius: "999px",
-            border: "1px solid #2563eb",
-            background: syncState === "syncing" ? "#1d4ed8" : "#2563eb",
+            border: "1px solid #c084fc",
+            background: syncState === "syncing" ? "#7c3aed" : "#6d28d9",
             color: "#fff",
             padding: "0.35rem 0.85rem",
             fontSize: "0.75rem",
@@ -603,9 +603,9 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
           }}
           style={{
             borderRadius: "999px",
-            border: "1px solid #10b981",
-            background: showInlinePlayer ? "#047857" : "transparent",
-            color: showInlinePlayer ? "#ecfdf5" : "#6ee7b7",
+            border: "1px solid #a855f7",
+            background: showInlinePlayer ? "rgba(168, 85, 247, 0.18)" : "transparent",
+            color: showInlinePlayer ? "#e9d5ff" : "#a855f7",
             padding: "0.35rem 0.85rem",
             fontSize: "0.75rem",
             cursor: playlistRows.length ? "pointer" : "not-allowed",
