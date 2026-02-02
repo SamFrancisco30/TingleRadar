@@ -708,6 +708,7 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
                     }
                     setCurrentIndex(idx);
                   }}
+                  className="video-card"
                   style={{
                     display: "flex",
                     gap: "1rem",
@@ -720,7 +721,7 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
                     alignItems: "center",
                   }}
                 >
-                  <div style={{ minWidth: "120px", maxWidth: "140px" }}>
+                  <div className="video-card-thumbnail" style={{ minWidth: "120px", maxWidth: "140px" }}>
                     <img
                       src={item.video.thumbnail_url}
                       alt={item.video.title}
