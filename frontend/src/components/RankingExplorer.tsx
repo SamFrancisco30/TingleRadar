@@ -249,7 +249,7 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
 
   const [isMobile, setIsMobile] = useState(false);
 
-  // Track viewport size so we can make the inline player sticky only on mobile.
+  // Track viewport size so we can adapt inline player behavior for mobile vs desktop.
   useEffect(() => {
     if (typeof window === "undefined") return;
     const mq = window.matchMedia("(max-width: 768px)");
@@ -630,14 +630,12 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
       {showInlinePlayer && currentVideoId && (
         <div
           style={{
-            position: isMobile ? "sticky" : "relative",
-            top: isMobile ? 0 : undefined,
-            zIndex: isMobile ? 40 : 1,
+            position: "sticky",
+            top: 0,
+            zIndex: 40,
             marginBottom: "1.5rem",
-            paddingTop: isMobile ? "0.5rem" : 0,
-            background: isMobile
-              ? "linear-gradient(180deg, rgba(5,7,10,0.98) 0%, rgba(5,7,10,0.9) 60%, rgba(5,7,10,0) 100%)"
-              : "transparent",
+            paddingTop: "0.5rem",
+            background: "linear-gradient(180deg, rgba(5,7,10,0.98) 0%, rgba(5,7,10,0.9) 60%, rgba(5,7,10,0) 100%)",
           }}
         >
           <div
@@ -651,7 +649,7 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
             <div
               style={{
                 position: "relative",
-                paddingBottom: isMobile ? "56.25%" : "40%",
+                paddingBottom: isMobile ? "56.25%" : "28%",
                 height: 0,
               }}
             >
