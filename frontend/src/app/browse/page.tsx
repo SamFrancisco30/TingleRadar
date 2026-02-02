@@ -163,6 +163,9 @@ export default async function BrowsePage({
               background: "#020617",
               color: "#e5e7eb",
               fontSize: "0.75rem",
+              textAlign: "center",
+              WebkitAppearance: "none",
+              MozAppearance: "textfield",
             }}
           />
           <button
