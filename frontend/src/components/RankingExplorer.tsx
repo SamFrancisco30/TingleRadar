@@ -251,7 +251,6 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
   const [isMiniPlayerDesktop, setIsMiniPlayerDesktop] = useState(false);
   const [inlinePlayerHeight, setInlinePlayerHeight] = useState(0);
   const inlinePlayerWrapperRef = useRef<HTMLDivElement | null>(null);
-  const inlinePlayerAnchorRef = useRef<{ top: number; height: number } | null>(null);
 
   // Track viewport size so we can adapt inline player behavior for mobile vs desktop.
   useEffect(() => {
