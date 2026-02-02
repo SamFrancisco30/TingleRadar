@@ -594,11 +594,18 @@ export default async function BrowsePage({
                   Roleplay scene
                 </p>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
-                  {roleplaySceneOptions.map((tag) => {
-                    const active = selectedTags.includes(tag);
-                    const nextTags = active
-                      ? selectedTags.filter((t) => t !== tag)
-                      : [...selectedTags, tag];
+                  {roleplaySceneOptions.map((sceneTag) => {
+                    const active = selectedTags.includes(sceneTag);
+                    // 保留非场景、非 roleplay 的其它 tag（如 tapping/whisper），
+                    // 场景筛选时不再把基础 "roleplay" 传给后端，避免 OR 逻辑失效。
+                    const baseTags = selectedTags.filter(
+                      (t) => t !== "roleplay" && !roleplaySceneOptions.includes(t)
+                    );
+                    const sceneTags = active
+                      ? selectedTags.filter((t) => t !== sceneTag && roleplaySceneOptions.includes(t))
+                      : [...selectedTags.filter((t) => roleplaySceneOptions.includes(t)), sceneTag];
+                    const nextTags = [...baseTags, ...sceneTags];
+
                     const href = new URLSearchParams({
                       page: "1",
                       ...(duration ? { duration } : {}),
@@ -611,7 +618,7 @@ export default async function BrowsePage({
                     }).toString();
                     return (
                       <a
-                        key={tag}
+                        key={sceneTag}
                         href={`/browse?${href}`}
                         style={{
                           padding: "0.35rem 0.75rem",
@@ -624,7 +631,7 @@ export default async function BrowsePage({
                           textDecoration: "none",
                         }}
                       >
-                        {roleplaySceneLabels[tag] || humanizeTag(tag)}
+                        {roleplaySceneLabels[sceneTag] || humanizeTag(sceneTag)}
                       </a>
                     );
                   })}
