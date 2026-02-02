@@ -33,6 +33,9 @@ export type BrowseResponse = {
   page_size: number;
 };
 
+// Roleplay scene tags used in backend filtering logic.
+const roleplaySceneOptions = ["rp_haircut", "rp_cranial", "rp_dentist"];
+
 async function fetchVideos(
   page: number,
   options?: {
@@ -109,11 +112,20 @@ export default async function BrowsePage({
         .filter(Boolean)
     : [];
 
+  // Mirror the BrowseFilterClient behavior on the server: when any roleplay scene
+  // tag is present, drop the generic "roleplay" tag so the backend OR logic
+  // actually filters by the specific scene tags.
+  const hasSceneTag = selectedTags.some((t) => roleplaySceneOptions.includes(t));
+  const tagsForFetch =
+    hasSceneTag && selectedTags.includes("roleplay")
+      ? selectedTags.filter((t) => t !== "roleplay")
+      : selectedTags;
+
   const channels: ChannelSummary[] = await fetchPopularChannels();
 
   const data = await fetchVideos(page, {
     duration,
-    tags: selectedTags,
+    tags: tagsForFetch,
     channels: selectedChannelIds,
     language,
     sort,

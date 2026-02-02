@@ -47,9 +47,16 @@ function buildTagsFromFilters(filters: FilterState, existingTags: string[]): str
       !roleplaySceneOptions.includes(t)
   );
 
+  // When any roleplay scene is selected, drop the generic "roleplay" tag so
+  // the backend OR logic actually narrows results to the specific scenes.
+  const triggerTags =
+    filters.roleplayScenes.length > 0
+      ? filters.triggerFilters.filter((t) => t !== "roleplay")
+      : filters.triggerFilters;
+
   return [
     ...base,
-    ...filters.triggerFilters,
+    ...triggerTags,
     ...filters.talkingStyleFilters,
     ...filters.roleplayScenes,
   ];
