@@ -1,6 +1,7 @@
 import React from "react";
 import "./globals.css";
 import { NavBar } from "./NavBar";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata = {
   title: "TingleRadar",
@@ -22,6 +23,7 @@ export default function RootLayout({
       >
         <NavBar />
         {children}
+        <SpeedInsights />
       </body>
     </html>
   );
