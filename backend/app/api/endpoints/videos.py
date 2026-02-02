@@ -28,6 +28,14 @@ def list_videos(
         None,
         description="Comma-separated internal tag ids (e.g. tapping,no_talking)",
     ),
+    language: Optional[str] = Query(
+        None,
+        description="Language code: en, ja, ko, zh (heuristic detection)",
+    ),
+    sort: Optional[str] = Query(
+        None,
+        description="Sort key: published_desc (default), views_desc, likes_desc",
+    ),
     db: Session = Depends(get_db),
 ) -> Dict[str, Any]:
     tag_list: List[str] = []
@@ -46,6 +54,8 @@ def list_videos(
         channel_ids=channel_list,
         duration_bucket=duration_bucket,
         tags=tag_list,
+        language=language,
+        sort=sort,
     )
     return {
         "items": items,

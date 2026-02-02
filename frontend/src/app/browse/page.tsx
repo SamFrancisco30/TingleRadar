@@ -38,6 +38,8 @@ async function fetchVideos(
     duration?: string | null;
     tags?: string[];
     channels?: string[];
+    language?: string | null;
+    sort?: string | null;
   }
 ): Promise<BrowseResponse | null> {
   if (!backendUrl) return null;
@@ -53,6 +55,12 @@ async function fetchVideos(
   }
   if (options?.channels && options.channels.length > 0) {
     params.set("channels", options.channels.join(","));
+  }
+  if (options?.language) {
+    params.set("language", options.language);
+  }
+  if (options?.sort) {
+    params.set("sort", options.sort);
   }
 
   const res = await fetch(`${backendUrl}/videos?${params.toString()}`, {
@@ -110,10 +118,19 @@ const humanizeTag = (tag: string): string =>
 export default async function BrowsePage({
   searchParams,
 }: {
-  searchParams?: { page?: string; duration?: string; tags?: string; channels?: string };
+  searchParams?: {
+    page?: string;
+    duration?: string;
+    tags?: string;
+    channels?: string;
+    language?: string;
+    sort?: string;
+  };
 }) {
   const page = Number(searchParams?.page ?? "1") || 1;
   const duration = searchParams?.duration ?? null;
+  const language = searchParams?.language ?? null;
+  const sort = searchParams?.sort ?? null;
   const channelsParam = searchParams?.channels ?? "";
   const tagsParam = searchParams?.tags ?? "";
   const selectedTags = tagsParam
@@ -132,7 +149,13 @@ export default async function BrowsePage({
 
   const channels: ChannelSummary[] = await fetchPopularChannels();
 
-  const data = await fetchVideos(page, { duration, tags: selectedTags, channels: selectedChannelIds });
+  const data = await fetchVideos(page, {
+    duration,
+    tags: selectedTags,
+    channels: selectedChannelIds,
+    language,
+    sort,
+  });
 
   if (!backendUrl) {
     return (
@@ -321,10 +344,10 @@ export default async function BrowsePage({
                   Filter catalog
                 </p>
                 <p style={{ margin: "0.25rem 0 0", fontSize: "0.9rem", color: "#cbd5f5" }}>
-                  Narrow by duration, triggers, and roleplay.
+                  Narrow by channels, duration, triggers, language, and more.
                 </p>
               </div>
-              {(duration || selectedTags.length > 0 || selectedChannelIds.length > 0) && (
+              {(duration || selectedTags.length > 0 || selectedChannelIds.length > 0 || language || sort) && (
                 <a
                   href="/browse"
                   style={{
@@ -361,6 +384,56 @@ export default async function BrowsePage({
                 tagsParam={tagsParam}
                 selectedChannelIds={selectedChannelIds}
               />
+            </div>
+
+            {/* Sort */}
+            <div style={{ marginTop: "0.4rem" }}>
+              <p
+                style={{
+                  fontSize: "0.65rem",
+                  letterSpacing: "0.3em",
+                  textTransform: "uppercase",
+                  color: "#9ca3af",
+                  marginBottom: "0.3rem",
+                }}
+              >
+                Sort by
+              </p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
+                {[{ id: "published_desc", label: "Newest" }, { id: "views_desc", label: "Most viewed" }, { id: "likes_desc", label: "Most liked" }].map(
+                  (opt) => {
+                    const active = (sort || "published_desc") === opt.id;
+                    const href = new URLSearchParams({
+                      page: "1",
+                      ...(duration ? { duration } : {}),
+                      ...(tagsParam ? { tags: tagsParam } : {}),
+                      ...(selectedChannelIds.length
+                        ? { channels: selectedChannelIds.join(",") }
+                        : {}),
+                      ...(opt.id !== "published_desc" ? { sort: opt.id } : {}),
+                      ...(language ? { language } : {}),
+                    }).toString();
+                    return (
+                      <a
+                        key={opt.id}
+                        href={`/browse?${href}`}
+                        style={{
+                          padding: "0.35rem 0.75rem",
+                          borderRadius: "999px",
+                          border: "1px solid",
+                          borderColor: active ? "#2563eb" : "#475569",
+                          background: active ? "#2563eb" : "#0f172a",
+                          color: active ? "#fff" : "#e2e8f0",
+                          fontSize: "0.7rem",
+                          textDecoration: "none",
+                        }}
+                      >
+                        {opt.label}
+                      </a>
+                    );
+                  }
+                )}
+              </div>
             </div>
 
             {/* Duration */}

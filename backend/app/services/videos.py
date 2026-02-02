@@ -16,6 +16,8 @@ def browse_videos(
     channel_ids: Optional[Sequence[str]] = None,
     duration_bucket: Optional[str] = None,
     tags: Optional[Sequence[str]] = None,
+    language: Optional[str] = None,
+    sort: Optional[str] = None,
 ) -> Tuple[List[VideoBase], int]:
     """Simple paginated browse over the videos catalog.
 
@@ -59,11 +61,19 @@ def browse_videos(
     if max_seconds is not None:
         query = query.filter(VideoModel.duration < max_seconds)
 
+    # Apply ordering based on sort parameter.
+    if sort == "views_desc":
+        query = query.order_by(VideoModel.view_count.desc(), VideoModel.published_at.desc())
+    elif sort == "likes_desc":
+        query = query.order_by(VideoModel.like_count.desc(), VideoModel.published_at.desc())
+    else:
+        # Default: newest first
+        query = query.order_by(VideoModel.published_at.desc())
+
     total = query.count()
 
     rows = (
-        query.order_by(VideoModel.published_at.desc())
-        .offset((page - 1) * page_size)
+        query.offset((page - 1) * page_size)
         .limit(page_size)
         .all()
     )
@@ -73,6 +83,27 @@ def browse_videos(
     for video in rows:
         payload = VideoBase.from_orm(video)
         payload.computed_tags = compute_tags_for_video(video)
+
+        # Optional language filter: derive language from title only via simple heuristics.
+        if language:
+            title = payload.title or ""
+            if language == "ja" and not any("\u3040" <= ch <= "\u30ff" for ch in title):
+                continue
+            if language == "ko" and not any("\uac00" <= ch <= "\ud7af" for ch in title):
+                continue
+            if language == "zh" and not any("\u4e00" <= ch <= "\u9fff" for ch in title):
+                continue
+            if language == "en":
+                # If title contains obvious CJK characters, treat it as non-English.
+                if any(
+                    ("\u3040" <= ch <= "\u30ff")
+                    or ("\u31f0" <= ch <= "\u31ff")
+                    or ("\uac00" <= ch <= "\ud7af")
+                    or ("\u4e00" <= ch <= "\u9fff")
+                    for ch in title
+                ):
+                    continue
+
         if tag_set:
             # Require at least one overlap between requested tags and computed_tags.
             if not any(tag in payload.computed_tags for tag in tag_set):
