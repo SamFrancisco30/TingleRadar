@@ -82,6 +82,7 @@ export default async function BrowsePage({
   const { items, total, page: currentPage, page_size } = data;
   const hasNext = currentPage * page_size < total;
   const hasPrev = currentPage > 1;
+  const totalPages = Math.max(1, Math.ceil(total / page_size));
 
   const Pagination = () => (
     <div
@@ -94,9 +95,24 @@ export default async function BrowsePage({
       }}
     >
       <span style={{ fontSize: "0.85rem", color: "#cbd5f5" }}>
-        Page {currentPage} · {items.length} videos · total {total}
+        Page {currentPage} / {totalPages} · {items.length} videos · total {total}
       </span>
-      <div style={{ display: "flex", gap: "0.5rem" }}>
+      <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+        <a
+          href={currentPage > 1 ? `/browse?page=1` : "#"}
+          style={{
+            padding: "0.35rem 0.8rem",
+            borderRadius: "999px",
+            border: "1px solid #4b5563",
+            background: "#020617",
+            color: currentPage > 1 ? "#e5e7eb" : "#4b5563",
+            fontSize: "0.75rem",
+            pointerEvents: currentPage > 1 ? "auto" : "none",
+            textDecoration: "none",
+          }}
+        >
+          First
+        </a>
         <a
           href={hasPrev ? `/browse?page=${currentPage - 1}` : "#"}
           style={{
@@ -127,6 +143,43 @@ export default async function BrowsePage({
         >
           Next
         </a>
+        <form
+          action="/browse"
+          method="get"
+          style={{ display: "flex", alignItems: "center", gap: "0.3rem", marginLeft: "0.5rem" }}
+        >
+          <span style={{ fontSize: "0.75rem", color: "#9ca3af" }}>Go to</span>
+          <input
+            type="number"
+            name="page"
+            min={1}
+            max={totalPages}
+            defaultValue={currentPage}
+            style={{
+              width: "3rem",
+              padding: "0.2rem 0.35rem",
+              borderRadius: "0.4rem",
+              border: "1px solid #4b5563",
+              background: "#020617",
+              color: "#e5e7eb",
+              fontSize: "0.75rem",
+            }}
+          />
+          <button
+            type="submit"
+            style={{
+              padding: "0.25rem 0.6rem",
+              borderRadius: "999px",
+              border: "1px solid #4b5563",
+              background: "#020617",
+              color: "#e5e7eb",
+              fontSize: "0.75rem",
+              cursor: "pointer",
+            }}
+          >
+            Go
+          </button>
+        </form>
       </div>
     </div>
   );
