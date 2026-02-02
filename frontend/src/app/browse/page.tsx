@@ -101,6 +101,12 @@ const talkingStyleOptions: string[] = ["whisper", "soft_spoken", "no_talking"];
 
 const roleplaySceneOptions: string[] = ["rp_haircut", "rp_cranial", "rp_dentist"];
 
+const roleplaySceneLabels: Record<string, string> = {
+  rp_haircut: "Haircut",
+  rp_cranial: "Cranial nerve exam",
+  rp_dentist: "Dentist",
+};
+
 const humanizeTag = (tag: string): string =>
   tag
     .split("_")
@@ -618,7 +624,7 @@ export default async function BrowsePage({
                           textDecoration: "none",
                         }}
                       >
-                        {humanizeTag(tag)}
+                        {roleplaySceneLabels[tag] || humanizeTag(tag)}
                       </a>
                     );
                   })}
