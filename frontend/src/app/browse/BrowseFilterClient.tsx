@@ -130,7 +130,7 @@ export function BrowseFilterClient({ channels }: BrowseFilterClientProps) {
 
     nextParams.set("page", "1");
 
-    router.push(`${pathname}?${nextParams.toString()}`);
+    router.push(`${pathname}?${nextParams.toString()}`, { scroll: false });
   };
 
   const handleClearFilters = () => {
@@ -140,7 +140,7 @@ export function BrowseFilterClient({ channels }: BrowseFilterClientProps) {
     nextParams.delete("language");
     nextParams.delete("sort");
     nextParams.delete("page");
-    router.push(`${pathname}?${nextParams.toString()}`);
+    router.push(`${pathname}?${nextParams.toString()}`, { scroll: false });
   };
 
   return (
@@ -249,7 +249,7 @@ export function BrowseFilterClient({ channels }: BrowseFilterClientProps) {
               <button
                 key={opt.id}
                 type="button"
-                onClick={() => router.push(`${pathname}?${nextParams.toString()}`)}
+                onClick={() => router.push(`${pathname}?${nextParams.toString()}`, { scroll: false })}
                 style={{
                   padding: "0.35rem 0.75rem",
                   borderRadius: "999px",
