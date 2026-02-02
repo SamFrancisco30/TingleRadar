@@ -64,7 +64,7 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument(
         "--top",
         type=int,
-        default=60,
+        default=100,
         help="How many videos to keep in the final ranking list.",
     )
     parser.add_argument(
