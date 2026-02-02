@@ -52,24 +52,41 @@ export default function RootLayout({
             >
               TingleRadar
             </a>
-            <nav style={{ display: "flex", gap: "0.9rem", fontSize: "0.85rem" }}>
+            <nav
+              style={{
+                display: "flex",
+                gap: "1.25rem",
+                fontSize: "0.85rem",
+                alignItems: "center",
+              }}
+            >
               <a
                 href="/"
                 style={{
-                  color: "#cbd5f5",
+                  color: "#e5e7eb",
                   textDecoration: "none",
+                  fontWeight: 500,
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                  padding: "0.25rem 0.4rem",
+                  borderBottom: "2px solid transparent",
                 }}
               >
-                Weekly board
+                Weekly Board
               </a>
               <a
                 href="/browse"
                 style={{
-                  color: "#cbd5f5",
+                  color: "#9ca3af",
                   textDecoration: "none",
+                  fontWeight: 500,
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                  padding: "0.25rem 0.4rem",
+                  borderBottom: "2px solid transparent",
                 }}
               >
-                Browse all
+                Browse All
               </a>
             </nav>
           </div>
