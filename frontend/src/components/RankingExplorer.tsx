@@ -547,7 +547,7 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
             <div
               style={{
                 position: "relative",
-                paddingBottom: isMobile ? "56.25%" : "40%",
+                paddingBottom: isMobile ? "56.25%" : "56.25%",
                 height: 0,
               }}
             >

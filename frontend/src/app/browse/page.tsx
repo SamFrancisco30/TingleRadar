@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { fetchPopularChannels, type ChannelSummary } from "./channels";
 import { VideoCard } from "../../components/VideoCard";
 import { BrowseFilterClient } from "./BrowseFilterClient";
+import { BrowsePlayerClient } from "./BrowsePlayerClient";
 
 const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
@@ -290,6 +291,9 @@ export default async function BrowsePage({
         >
           {/* Filters */}
           <BrowseFilterClient channels={channels} />
+
+          {/* Inline player controls & player for current page */}
+          <BrowsePlayerClient items={items} />
 
           <div style={{ marginTop: "0.75rem" }}>
             {items.map((video) => (
