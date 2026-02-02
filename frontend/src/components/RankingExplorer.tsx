@@ -785,7 +785,7 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
                     </a>
                     <div style={{ color: "#94a3b8", marginTop: "0.25rem" }}>{item.video.channel_title}</div>
                     <div style={{ fontSize: "0.85rem", color: "#94a3b8" }}>
-                      Views {item.video.view_count.toLocaleString()} · Likes {item.video.like_count.toLocaleString()}
+                      Views {item.video.view_count.toLocaleString()} · Likes {item.video.like_count.toLocaleString()} · Published {new Date(item.video.published_at as any).toLocaleDateString()}
                     </div>
                     <div style={{ marginTop: "0.5rem", display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
                       {item.type_tags.map((tag) => (

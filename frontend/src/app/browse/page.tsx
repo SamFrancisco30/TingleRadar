@@ -693,9 +693,7 @@ export default async function BrowsePage({
                     {video.channel_title}
                   </div>
                   <div style={{ fontSize: "0.85rem", color: "#9ca3af", marginTop: "0.15rem" }}>
-                    Views {video.view_count.toLocaleString()} · Likes {video.like_count.toLocaleString()} ·
-                    {" "}
-                    {formatDuration(video.duration)}
+                    Views {video.view_count.toLocaleString()} · Likes {video.like_count.toLocaleString()} · {formatDuration(video.duration)} · Published {new Date(video.published_at as any).toLocaleDateString()}
                   </div>
 
                   {video.computed_tags && video.computed_tags.length > 0 && (
