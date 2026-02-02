@@ -272,7 +272,13 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
 
   // Initialize and control the YouTube IFrame Player API for inline playback.
   useEffect(() => {
+    // When the inline player is hidden, tear down the existing player so
+    // that re-opening it creates a fresh instance attached to the new DOM node.
     if (!showInlinePlayer || !currentVideoId) {
+      if (playerRef.current && typeof playerRef.current.destroy === "function") {
+        playerRef.current.destroy();
+        playerRef.current = null;
+      }
       return;
     }
 
