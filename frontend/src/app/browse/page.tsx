@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 
+import { fetchPopularChannels, type ChannelSummary } from "./channels";
+
 const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 export const metadata: Metadata = {
@@ -34,6 +36,7 @@ async function fetchVideos(
   options?: {
     duration?: string | null;
     tags?: string[];
+    channel?: string | null;
   }
 ): Promise<BrowseResponse | null> {
   if (!backendUrl) return null;
@@ -46,6 +49,9 @@ async function fetchVideos(
   }
   if (options?.tags && options.tags.length > 0) {
     params.set("tags", options.tags.join(","));
+  }
+  if (options?.channel) {
+    params.set("channel_id", options.channel);
   }
 
   const res = await fetch(`${backendUrl}/videos?${params.toString()}`, {
@@ -103,10 +109,11 @@ const humanizeTag = (tag: string): string =>
 export default async function BrowsePage({
   searchParams,
 }: {
-  searchParams?: { page?: string; duration?: string; tags?: string };
+  searchParams?: { page?: string; duration?: string; tags?: string; channel?: string };
 }) {
   const page = Number(searchParams?.page ?? "1") || 1;
   const duration = searchParams?.duration ?? null;
+  const channel = searchParams?.channel ?? null;
   const tagsParam = searchParams?.tags ?? "";
   const selectedTags = tagsParam
     ? tagsParam
@@ -115,7 +122,9 @@ export default async function BrowsePage({
         .filter(Boolean)
     : [];
 
-  const data = await fetchVideos(page, { duration, tags: selectedTags });
+  const channels: ChannelSummary[] = await fetchPopularChannels();
+
+  const data = await fetchVideos(page, { duration, tags: selectedTags, channel });
 
   if (!backendUrl) {
     return (
@@ -307,7 +316,7 @@ export default async function BrowsePage({
                   Narrow by duration, triggers, and roleplay.
                 </p>
               </div>
-              {(duration || selectedTags.length > 0) && (
+              {(duration || selectedTags.length > 0 || channel) && (
                 <a
                   href="/browse"
                   style={{
@@ -323,6 +332,64 @@ export default async function BrowsePage({
                   Clear filters
                 </a>
               )}
+            </div>
+
+            {/* Channel */}
+            <div style={{ marginTop: "0.4rem" }}>
+              <p
+                style={{
+                  fontSize: "0.65rem",
+                  letterSpacing: "0.3em",
+                  textTransform: "uppercase",
+                  color: "#9ca3af",
+                  marginBottom: "0.3rem",
+                }}
+              >
+                Channel
+              </p>
+              <form
+                action="/browse"
+                method="get"
+                style={{ display: "flex", gap: "0.4rem", alignItems: "center", flexWrap: "wrap" }}
+              >
+                <select
+                  name="channel"
+                  defaultValue={channel ?? ""}
+                  style={{
+                    minWidth: "220px",
+                    padding: "0.35rem 0.6rem",
+                    borderRadius: "0.5rem",
+                    border: "1px solid #4b5563",
+                    background: "#020617",
+                    color: "#e5e7eb",
+                    fontSize: "0.8rem",
+                  }}
+                >
+                  <option value="">All channels</option>
+                  {channels.map((c) => (
+                    <option key={c.channel_id} value={c.channel_id}>
+                      {c.channel_title} ({c.video_count})
+                    </option>
+                  ))}
+                </select>
+                {/* Preserve other filters when changing channel */}
+                {duration && <input type="hidden" name="duration" value={duration} />}
+                {tagsParam && <input type="hidden" name="tags" value={tagsParam} />}
+                <button
+                  type="submit"
+                  style={{
+                    padding: "0.35rem 0.8rem",
+                    borderRadius: "999px",
+                    border: "1px solid #4b5563",
+                    background: "#020617",
+                    color: "#e5e7eb",
+                    fontSize: "0.75rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  Apply
+                </button>
+              </form>
             </div>
 
             {/* Duration */}
@@ -344,6 +411,7 @@ export default async function BrowsePage({
                   const href = new URLSearchParams({
                     page: "1",
                     ...(active ? {} : { duration: b.id, tags: tagsParam }),
+                    ...(channel ? { channel } : {}),
                   }).toString();
                   return (
                     <a
