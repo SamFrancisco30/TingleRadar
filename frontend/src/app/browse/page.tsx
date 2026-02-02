@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { fetchPopularChannels, type ChannelSummary } from "./channels";
+import { ChannelFilterClient } from "./ChannelFilterClient";
 
 const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
@@ -347,49 +348,12 @@ export default async function BrowsePage({
               >
                 Channel
               </p>
-              <form
-                action="/browse"
-                method="get"
-                style={{ display: "flex", gap: "0.4rem", alignItems: "center", flexWrap: "wrap" }}
-              >
-                <select
-                  name="channel"
-                  defaultValue={channel ?? ""}
-                  style={{
-                    minWidth: "220px",
-                    padding: "0.35rem 0.6rem",
-                    borderRadius: "0.5rem",
-                    border: "1px solid #4b5563",
-                    background: "#020617",
-                    color: "#e5e7eb",
-                    fontSize: "0.8rem",
-                  }}
-                >
-                  <option value="">All channels</option>
-                  {channels.map((c) => (
-                    <option key={c.channel_id} value={c.channel_id}>
-                      {c.channel_title} ({c.video_count})
-                    </option>
-                  ))}
-                </select>
-                {/* Preserve other filters when changing channel */}
-                {duration && <input type="hidden" name="duration" value={duration} />}
-                {tagsParam && <input type="hidden" name="tags" value={tagsParam} />}
-                <button
-                  type="submit"
-                  style={{
-                    padding: "0.35rem 0.8rem",
-                    borderRadius: "999px",
-                    border: "1px solid #4b5563",
-                    background: "#020617",
-                    color: "#e5e7eb",
-                    fontSize: "0.75rem",
-                    cursor: "pointer",
-                  }}
-                >
-                  Apply
-                </button>
-              </form>
+              <ChannelFilterClient
+                channels={channels}
+                duration={duration}
+                tagsParam={tagsParam}
+                channel={channel}
+              />
             </div>
 
             {/* Duration */}
