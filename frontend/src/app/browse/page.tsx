@@ -241,7 +241,10 @@ export default async function BrowsePage({
                             color: "#cbd5f5",
                           }}
                         >
-                          {tag}
+                          {tag
+                            .split("_")
+                            .map((part) => (part ? part[0].toUpperCase() + part.slice(1) : ""))
+                            .join(" ")}
                         </span>
                       ))}
                     </div>
