@@ -25,8 +25,10 @@ export const triggerTypeOptions: string[] = [
   "binaural",
   "visual_asmr",
   "layered",
-  "roleplay",
+  "roleplay", // kept in the internal list for parsing/URL mapping
 ];
+
+const ROLEPLAY_TRIGGER_ID = "roleplay";
 
 export const talkingStyleOptions: string[] = [
   "whisper",
@@ -144,30 +146,61 @@ export function FilterPanel({ state, onChange }: FilterPanelProps) {
           Trigger Type
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
-          {triggerTypeOptions.map((type) => {
-            const active = triggerFilters.includes(type);
-            return (
-              <button
-                key={type}
-                style={chipStyle(active)}
-                onClick={() => {
-                  // If roleplay is turned off, also clear roleplay scenes.
-                  onChange({
-                    ...state,
-                    triggerFilters: active
-                      ? triggerFilters.filter((t) => t !== type)
-                      : [...triggerFilters, type],
-                    roleplayScenes:
-                      type === "roleplay" && active
-                        ? []
-                        : state.roleplayScenes,
-                  });
-                }}
-              >
-                {displayTag(type)}
-              </button>
-            );
-          })}
+          {triggerTypeOptions
+            .filter((type) => type !== ROLEPLAY_TRIGGER_ID)
+            .map((type) => {
+              const active = triggerFilters.includes(type);
+              return (
+                <button
+                  key={type}
+                  style={chipStyle(active)}
+                  onClick={() => {
+                    onChange({
+                      ...state,
+                      triggerFilters: active
+                        ? triggerFilters.filter((t) => t !== type)
+                        : [...triggerFilters, type],
+                    });
+                  }}
+                >
+                  {displayTag(type)}
+                </button>
+              );
+            })}
+        </div>
+      </div>
+
+      {/* Roleplay */}
+      <div style={{ marginTop: "0.9rem" }}>
+        <p
+          style={{
+            fontSize: "0.65rem",
+            letterSpacing: "0.3em",
+            textTransform: "uppercase",
+            color: "#9ca3af",
+            marginBottom: "0.3rem",
+          }}
+        >
+          Roleplay
+        </p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
+          <button
+            type="button"
+            style={chipStyle(triggerFilters.includes(ROLEPLAY_TRIGGER_ID))}
+            onClick={() => {
+              const active = triggerFilters.includes(ROLEPLAY_TRIGGER_ID);
+              onChange({
+                ...state,
+                triggerFilters: active
+                  ? triggerFilters.filter((t) => t !== ROLEPLAY_TRIGGER_ID)
+                  : [...triggerFilters, ROLEPLAY_TRIGGER_ID],
+                // If roleplay is turned off, also clear roleplay scenes.
+                roleplayScenes: active ? [] : state.roleplayScenes,
+              });
+            }}
+          >
+            {displayTag(ROLEPLAY_TRIGGER_ID)}
+          </button>
         </div>
       </div>
 
