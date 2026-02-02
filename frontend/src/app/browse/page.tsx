@@ -637,6 +637,7 @@ export default async function BrowsePage({
             {items.map((video) => (
               <article
                 key={video.youtube_id}
+                className="video-card"
                 style={{
                   display: "flex",
                   gap: "1rem",
@@ -649,7 +650,7 @@ export default async function BrowsePage({
                   alignItems: "center",
                 }}
               >
-                <div style={{ minWidth: "180px", maxWidth: "220px" }}>
+                <div className="video-card-thumbnail" style={{ minWidth: "180px", maxWidth: "220px" }}>
                   {video.thumbnail_url ? (
                     <img
                       src={video.thumbnail_url}
