@@ -88,16 +88,14 @@ def browse_videos(
         # Default: newest first
         query = query.order_by(VideoModel.published_at.desc())
 
-    total = query.count()
-
-    rows = (
-        query.offset((page - 1) * page_size)
-        .limit(page_size)
-        .all()
-    )
+    # NOTE: language and tag filters are applied in Python so that we can reuse
+    # the same heuristics as the frontend. To keep pagination consistent when
+    # those filters are used, we fetch the full candidate set after SQL-level
+    # filters (channel/duration) and then slice in memory.
+    rows = query.all()
 
     tag_set = set(tags or [])
-    items: List[VideoBase] = []
+    filtered: List[VideoBase] = []
     for video in rows:
         payload = VideoBase.from_orm(video)
         payload.computed_tags = compute_tags_for_video(video)
@@ -113,6 +111,11 @@ def browse_videos(
             # Require at least one overlap between requested tags and computed_tags.
             if not any(tag in payload.computed_tags for tag in tag_set):
                 continue
-        items.append(payload)
+        filtered.append(payload)
+
+    total = len(filtered)
+    start = (page - 1) * page_size
+    end = start + page_size
+    items = filtered[start:end]
 
     return items, total
