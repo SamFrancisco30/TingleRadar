@@ -1,4 +1,4 @@
-from typing import List, Optional, Tuple
+from typing import List, Optional, Sequence, Tuple
 
 from sqlalchemy.orm import Session
 
@@ -13,14 +13,20 @@ def browse_videos(
     page: int = 1,
     page_size: int = 50,
     channel_id: Optional[str] = None,
+    duration_bucket: Optional[str] = None,
+    tags: Optional[Sequence[str]] = None,
 ) -> Tuple[List[VideoBase], int]:
     """Simple paginated browse over the videos catalog.
 
-    For now we support:
+    Supports:
     - pagination via (page, page_size)
     - optional filtering by channel_id
+    - optional duration_bucket: "short" (2-5 min), "medium" (5-15 min), "long" (>=15 min)
+    - optional tags: list of internal computed tag ids (e.g. ["tapping", "no_talking"]).
 
-    The function returns (items, total_count).
+    For now tag filtering is applied in Python after computing computed_tags,
+    which is acceptable for modest result sizes. We can move this into SQL later
+    by persisting computed_tags on the Video model.
     """
 
     if page < 1:
@@ -32,6 +38,22 @@ def browse_videos(
     if channel_id:
         query = query.filter(VideoModel.channel_id == channel_id)
 
+    # Duration bucket is handled at the SQL level so pagination reflects the filtered
+    # subset as much as possible.
+    min_seconds: Optional[int] = None
+    max_seconds: Optional[int] = None
+    if duration_bucket == "short":  # 2-5 min
+        min_seconds, max_seconds = 120, 300
+    elif duration_bucket == "medium":  # 5-15 min
+        min_seconds, max_seconds = 300, 900
+    elif duration_bucket == "long":  # 15+ min
+        min_seconds, max_seconds = 900, None
+
+    if min_seconds is not None:
+        query = query.filter(VideoModel.duration >= min_seconds)
+    if max_seconds is not None:
+        query = query.filter(VideoModel.duration < max_seconds)
+
     total = query.count()
 
     rows = (
@@ -41,10 +63,15 @@ def browse_videos(
         .all()
     )
 
+    tag_set = set(tags or [])
     items: List[VideoBase] = []
     for video in rows:
         payload = VideoBase.from_orm(video)
         payload.computed_tags = compute_tags_for_video(video)
+        if tag_set:
+            # Require at least one overlap between requested tags and computed_tags.
+            if not any(tag in payload.computed_tags for tag in tag_set):
+                continue
         items.append(payload)
 
     return items, total

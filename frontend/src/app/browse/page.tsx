@@ -29,10 +29,26 @@ export type BrowseResponse = {
   page_size: number;
 };
 
-async function fetchVideos(page: number): Promise<BrowseResponse | null> {
+async function fetchVideos(
+  page: number,
+  options?: {
+    duration?: string | null;
+    tags?: string[];
+  }
+): Promise<BrowseResponse | null> {
   if (!backendUrl) return null;
 
-  const res = await fetch(`${backendUrl}/videos?page=${page}&page_size=50`, {
+  const params = new URLSearchParams();
+  params.set("page", String(page));
+  params.set("page_size", "50");
+  if (options?.duration) {
+    params.set("duration_bucket", options.duration);
+  }
+  if (options?.tags && options.tags.length > 0) {
+    params.set("tags", options.tags.join(","));
+  }
+
+  const res = await fetch(`${backendUrl}/videos?${params.toString()}`, {
     cache: "no-store",
   });
 
@@ -53,13 +69,53 @@ function formatDuration(seconds?: number | null): string {
   return m ? `${h}h ${m}m` : `${h}h`;
 }
 
+const durationBuckets = [
+  { id: "short", label: "2-5 min" },
+  { id: "medium", label: "5-15 min" },
+  { id: "long", label: "15+ min" },
+];
+
+// Mirror a subset of RankingExplorer's internal tag ids for triggers and talking styles.
+const triggerTypeOptions: string[] = [
+  "tapping",
+  "scratching",
+  "crinkling",
+  "brushing",
+  "ear_cleaning",
+  "mouth_sounds",
+  "white_noise",
+  "binaural",
+  "visual_asmr",
+  "layered",
+  "roleplay",
+];
+
+const talkingStyleOptions: string[] = ["whisper", "soft_spoken", "no_talking"];
+
+const roleplaySceneOptions: string[] = ["rp_haircut", "rp_cranial", "rp_dentist"];
+
+const humanizeTag = (tag: string): string =>
+  tag
+    .split("_")
+    .map((part) => (part ? part[0].toUpperCase() + part.slice(1) : ""))
+    .join(" ");
+
 export default async function BrowsePage({
   searchParams,
 }: {
-  searchParams?: { page?: string };
+  searchParams?: { page?: string; duration?: string; tags?: string };
 }) {
   const page = Number(searchParams?.page ?? "1") || 1;
-  const data = await fetchVideos(page);
+  const duration = searchParams?.duration ?? null;
+  const tagsParam = searchParams?.tags ?? "";
+  const selectedTags = tagsParam
+    ? tagsParam
+        .split(",")
+        .map((x) => x.trim())
+        .filter(Boolean)
+    : [];
+
+  const data = await fetchVideos(page, { duration, tags: selectedTags });
 
   if (!backendUrl) {
     return (
@@ -216,6 +272,242 @@ export default async function BrowsePage({
             boxShadow: "0 20px 80px rgba(5, 6, 15, 0.45)",
           }}
         >
+          {/* Filters */}
+          <div
+            style={{
+              borderRadius: "1.25rem",
+              border: "1px solid #1f2937",
+              background: "rgba(15, 23, 42, 0.75)",
+              padding: "1rem",
+              marginBottom: "1rem",
+              backdropFilter: "blur(8px)",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-end",
+                marginBottom: "0.6rem",
+              }}
+            >
+              <div>
+                <p
+                  style={{
+                    fontSize: "0.6rem",
+                    letterSpacing: "0.3em",
+                    textTransform: "uppercase",
+                    color: "#94a3b8",
+                    margin: 0,
+                  }}
+                >
+                  Filter catalog
+                </p>
+                <p style={{ margin: "0.25rem 0 0", fontSize: "0.9rem", color: "#cbd5f5" }}>
+                  Narrow by duration, triggers, and roleplay.
+                </p>
+              </div>
+              {(duration || selectedTags.length > 0) && (
+                <a
+                  href="/browse"
+                  style={{
+                    border: "1px solid #475569",
+                    background: "transparent",
+                    color: "#cbd5f5",
+                    padding: "0.35rem 0.8rem",
+                    borderRadius: "999px",
+                    fontSize: "0.7rem",
+                    textDecoration: "none",
+                  }}
+                >
+                  Clear filters
+                </a>
+              )}
+            </div>
+
+            {/* Duration */}
+            <div style={{ marginTop: "0.4rem" }}>
+              <p
+                style={{
+                  fontSize: "0.65rem",
+                  letterSpacing: "0.3em",
+                  textTransform: "uppercase",
+                  color: "#9ca3af",
+                  marginBottom: "0.3rem",
+                }}
+              >
+                Duration
+              </p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
+                {durationBuckets.map((b) => {
+                  const active = duration === b.id;
+                  const href = new URLSearchParams({
+                    page: "1",
+                    ...(active ? {} : { duration: b.id, tags: tagsParam }),
+                  }).toString();
+                  return (
+                    <a
+                      key={b.id}
+                      href={`/browse?${href}`}
+                      style={{
+                        padding: "0.35rem 0.75rem",
+                        borderRadius: "999px",
+                        border: "1px solid",
+                        borderColor: active ? "#059669" : "#475569",
+                        background: active ? "#059669" : "#0f172a",
+                        color: active ? "#fff" : "#e2e8f0",
+                        fontSize: "0.7rem",
+                        textDecoration: "none",
+                      }}
+                    >
+                      {b.label}
+                    </a>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Trigger type */}
+            <div style={{ marginTop: "0.8rem" }}>
+              <p
+                style={{
+                  fontSize: "0.65rem",
+                  letterSpacing: "0.3em",
+                  textTransform: "uppercase",
+                  color: "#9ca3af",
+                  marginBottom: "0.3rem",
+                }}
+              >
+                Trigger Type
+              </p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
+                {triggerTypeOptions.map((tag) => {
+                  const active = selectedTags.includes(tag);
+                  const nextTags = active
+                    ? selectedTags.filter((t) => t !== tag)
+                    : [...selectedTags, tag];
+                  const href = new URLSearchParams({
+                    page: "1",
+                    ...(duration ? { duration } : {}),
+                    ...(nextTags.length ? { tags: nextTags.join(",") } : {}),
+                  }).toString();
+                  return (
+                    <a
+                      key={tag}
+                      href={`/browse?${href}`}
+                      style={{
+                        padding: "0.35rem 0.75rem",
+                        borderRadius: "999px",
+                        border: "1px solid",
+                        borderColor: active ? "#059669" : "#475569",
+                        background: active ? "#059669" : "#0f172a",
+                        color: active ? "#fff" : "#e2e8f0",
+                        fontSize: "0.7rem",
+                        textDecoration: "none",
+                      }}
+                    >
+                      {humanizeTag(tag)}
+                    </a>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Talking style */}
+            <div style={{ marginTop: "0.8rem" }}>
+              <p
+                style={{
+                  fontSize: "0.65rem",
+                  letterSpacing: "0.3em",
+                  textTransform: "uppercase",
+                  color: "#9ca3af",
+                  marginBottom: "0.3rem",
+                }}
+              >
+                Talking style
+              </p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
+                {talkingStyleOptions.map((tag) => {
+                  const active = selectedTags.includes(tag);
+                  const nextTags = active
+                    ? selectedTags.filter((t) => t !== tag)
+                    : [...selectedTags, tag];
+                  const href = new URLSearchParams({
+                    page: "1",
+                    ...(duration ? { duration } : {}),
+                    ...(nextTags.length ? { tags: nextTags.join(",") } : {}),
+                  }).toString();
+                  return (
+                    <a
+                      key={tag}
+                      href={`/browse?${href}`}
+                      style={{
+                        padding: "0.35rem 0.75rem",
+                        borderRadius: "999px",
+                        border: "1px solid",
+                        borderColor: active ? "#059669" : "#475569",
+                        background: active ? "#059669" : "#0f172a",
+                        color: active ? "#fff" : "#e2e8f0",
+                        fontSize: "0.7rem",
+                        textDecoration: "none",
+                      }}
+                    >
+                      {humanizeTag(tag)}
+                    </a>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Roleplay scenes: only when roleplay is selected */}
+            {selectedTags.includes("roleplay") && (
+              <div style={{ marginTop: "0.8rem" }}>
+                <p
+                  style={{
+                    fontSize: "0.65rem",
+                    letterSpacing: "0.3em",
+                    textTransform: "uppercase",
+                    color: "#9ca3af",
+                    marginBottom: "0.3rem",
+                  }}
+                >
+                  Roleplay scene
+                </p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
+                  {roleplaySceneOptions.map((tag) => {
+                    const active = selectedTags.includes(tag);
+                    const nextTags = active
+                      ? selectedTags.filter((t) => t !== tag)
+                      : [...selectedTags, tag];
+                    const href = new URLSearchParams({
+                      page: "1",
+                      ...(duration ? { duration } : {}),
+                      ...(nextTags.length ? { tags: nextTags.join(",") } : {}),
+                    }).toString();
+                    return (
+                      <a
+                        key={tag}
+                        href={`/browse?${href}`}
+                        style={{
+                          padding: "0.35rem 0.75rem",
+                          borderRadius: "999px",
+                          border: "1px solid",
+                          borderColor: active ? "#059669" : "#475569",
+                          background: active ? "#059669" : "#0f172a",
+                          color: active ? "#fff" : "#e2e8f0",
+                          fontSize: "0.7rem",
+                          textDecoration: "none",
+                        }}
+                      >
+                        {humanizeTag(tag)}
+                      </a>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
           <Pagination />
 
           <div style={{ marginTop: "0.75rem" }}>
