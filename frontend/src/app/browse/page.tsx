@@ -76,43 +76,6 @@ async function fetchVideos(
   return data;
 }
 
-const durationBuckets = [
-  { id: "short", label: "2-5 min" },
-  { id: "medium", label: "5-15 min" },
-  { id: "long", label: "15+ min" },
-];
-
-// Mirror a subset of RankingExplorer's internal tag ids for triggers and talking styles.
-const triggerTypeOptions: string[] = [
-  "tapping",
-  "scratching",
-  "crinkling",
-  "brushing",
-  "ear_cleaning",
-  "mouth_sounds",
-  "white_noise",
-  "binaural",
-  "visual_asmr",
-  "layered",
-  "roleplay",
-];
-
-const talkingStyleOptions: string[] = ["whisper", "soft_spoken", "no_talking"];
-
-const roleplaySceneOptions: string[] = ["rp_haircut", "rp_cranial", "rp_dentist"];
-
-const roleplaySceneLabels: Record<string, string> = {
-  rp_haircut: "Haircut",
-  rp_cranial: "Cranial nerve exam",
-  rp_dentist: "Dentist",
-};
-
-const humanizeTag = (tag: string): string =>
-  tag
-    .split("_")
-    .map((part) => (part ? part[0].toUpperCase() + part.slice(1) : ""))
-    .join(" ");
-
 export default async function BrowsePage({
   searchParams,
 }: {
@@ -131,6 +94,7 @@ export default async function BrowsePage({
   const sort = searchParams?.sort ?? null;
   const channelsParam = searchParams?.channels ?? "";
   const tagsParam = searchParams?.tags ?? "";
+
   const selectedTags = tagsParam
     ? tagsParam
         .split(",")

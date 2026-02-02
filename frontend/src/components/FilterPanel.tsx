@@ -193,12 +193,11 @@ export function FilterPanel({ state, onChange }: FilterPanelProps) {
                 key={style}
                 style={chipStyle(active)}
                 onClick={() => {
-                  const next = active
-                    ? talkingStyleFilters.filter((s) => s !== style)
-                    : [...talkingStyleFilters, style];
                   onChange({
                     ...state,
-                    talkingStyleFilters: next,
+                    talkingStyleFilters: active
+                      ? talkingStyleFilters.filter((s) => s !== style)
+                      : [...talkingStyleFilters, style],
                   });
                 }}
               >
