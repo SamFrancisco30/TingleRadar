@@ -7,6 +7,24 @@ from app.schemas.video import VideoBase
 from app.services.tagging import compute_tags_for_video
 
 
+def _detect_language_from_title(title: str) -> str:
+  """Heuristic language detection based on Unicode ranges.
+
+  This mirrors the frontend RankingExplorer behavior so that Weekly and
+  Browse views stay consistent.
+  """
+  for ch in title:
+      if "\u3040" <= ch <= "\u30ff" or "\u31f0" <= ch <= "\u31ff":
+          return "ja"
+  for ch in title:
+      if "\uac00" <= ch <= "\ud7af":
+          return "ko"
+  for ch in title:
+      if "\u4e00" <= ch <= "\u9fff":
+          return "zh"
+  return "en"
+
+
 def browse_videos(
     db: Session,
     *,
@@ -84,25 +102,12 @@ def browse_videos(
         payload = VideoBase.from_orm(video)
         payload.computed_tags = compute_tags_for_video(video)
 
-        # Optional language filter: derive language from title only via simple heuristics.
+        # Optional language filter using the same heuristic as the frontend
+        # (RankingExplorer) so that classification stays consistent.
         if language:
-            title = payload.title or ""
-            if language == "ja" and not any("\u3040" <= ch <= "\u30ff" for ch in title):
+            detected = _detect_language_from_title(payload.title or "")
+            if detected != language:
                 continue
-            if language == "ko" and not any("\uac00" <= ch <= "\ud7af" for ch in title):
-                continue
-            if language == "zh" and not any("\u4e00" <= ch <= "\u9fff" for ch in title):
-                continue
-            if language == "en":
-                # If title contains obvious CJK characters, treat it as non-English.
-                if any(
-                    ("\u3040" <= ch <= "\u30ff")
-                    or ("\u31f0" <= ch <= "\u31ff")
-                    or ("\uac00" <= ch <= "\ud7af")
-                    or ("\u4e00" <= ch <= "\u9fff")
-                    for ch in title
-                ):
-                    continue
 
         if tag_set:
             # Require at least one overlap between requested tags and computed_tags.
