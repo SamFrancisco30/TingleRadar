@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const durationBuckets = [
   { id: "short", label: "2-5 min", min: 120, max: 300 },
@@ -184,6 +184,7 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
   const [durationFilter, setDurationFilter] = useState<string | null>(null);
   const [syncState, setSyncState] = useState<"idle" | "syncing" | "success" | "error">("idle");
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
+  const [currentVideoId, setCurrentVideoId] = useState<string | null>(null);
 
   const normalized = useMemo(
     () =>
@@ -240,7 +241,20 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
     [normalized, triggerFilters, talkingStyleFilters, roleplayScenes, languageFilters, durationFilter]
   );
 
-  const playlistRows = filtered[0]?.items ?? [];
+  const playlistRows = useMemo(() => filtered[0]?.items ?? [], [filtered]);
+
+  // Keep the currently playing video in sync with the filtered list.
+  useEffect(() => {
+    if (!playlistRows.length) {
+      setCurrentVideoId(null);
+      return;
+    }
+    // If current video is not in the new filtered list, default to the top one.
+    const stillExists = currentVideoId && playlistRows.some((item) => item.video.youtube_id === currentVideoId);
+    if (!stillExists) {
+      setCurrentVideoId(playlistRows[0].video.youtube_id);
+    }
+  }, [playlistRows, currentVideoId]);
 
   const playlistName = filtered[0]?.name ?? "TingleRadar Weekly Playlist";
   const playlistDescription = filtered[0]?.description ?? "Weekly ASMR playlist curated by TingleRadar.";
@@ -477,6 +491,42 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
           {syncMessage}
         </p>
       )}
+
+      {currentVideoId && (
+        <div
+          style={{
+            marginBottom: "1.5rem",
+            borderRadius: "1.25rem",
+            overflow: "hidden",
+            border: "1px solid #1f2937",
+            background: "#020617",
+          }}
+        >
+          <div
+            style={{
+              position: "relative",
+              paddingBottom: "56.25%",
+              height: 0,
+            }}
+          >
+            <iframe
+              src={`https://www.youtube.com/embed/${currentVideoId}?autoplay=1&rel=0`}
+              title="TingleRadar player"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "100%",
+                border: 0,
+              }}
+            />
+          </div>
+        </div>
+      )}
+
       <div className="space-y-8">
         {filtered.map((list) => (
           <section key={list.name} style={{ marginBottom: "2rem" }}>
@@ -490,19 +540,23 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
               </span>
             </div>
             <div style={{ marginTop: "1rem" }}>
-              {list.items.map((item) => (
+              {list.items.map((item) => {
+                const isActive = item.video.youtube_id === currentVideoId;
+                return (
                 <article
                   key={item.video.youtube_id}
+                  onClick={() => setCurrentVideoId(item.video.youtube_id)}
                   style={{
                     display: "flex",
                     gap: "1rem",
                     marginBottom: "1rem",
                     padding: "1rem",
                     borderRadius: "1.25rem",
-                    border: "1px solid #1e293b",
-                    background: "rgba(15, 23, 42, 0.75)",
+                    border: isActive ? "1px solid #4ade80" : "1px solid #1e293b",
+                    background: isActive ? "rgba(22, 163, 74, 0.16)" : "rgba(15, 23, 42, 0.75)",
                     boxShadow: "0 15px 40px rgba(2, 6, 23, 0.55)",
                     alignItems: "center",
+                    cursor: "pointer",
                   }}
                 >
                   <div style={{ minWidth: "120px", maxWidth: "140px" }}>
@@ -577,7 +631,7 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
                     </div>
                   </div>
                 </article>
-              ))}
+              )})}
             </div>
           </section>
         ))}
