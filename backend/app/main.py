@@ -12,6 +12,8 @@ app = FastAPI(title=settings.project_name)
 # CORS settings: allow frontend origins to call the API
 origins = [
     "https://tingle-radar.vercel.app",
+    "https://tingleradar.com",
+    "https://www.tingleradar.com",
 ]
 
 app.add_middleware(
