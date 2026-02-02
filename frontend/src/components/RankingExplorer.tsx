@@ -248,9 +248,6 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
   const playlistRows = useMemo(() => filtered[0]?.items ?? [], [filtered]);
 
   const [isMobile, setIsMobile] = useState(false);
-  const [isMiniPlayerDesktop, setIsMiniPlayerDesktop] = useState(false);
-  const [inlinePlayerHeight, setInlinePlayerHeight] = useState(0);
-  const inlinePlayerWrapperRef = useRef<HTMLDivElement | null>(null);
 
   // Track viewport size so we can adapt inline player behavior for mobile vs desktop.
   useEffect(() => {
@@ -264,54 +261,6 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
     mq.addEventListener("change", handleChange as any);
     return () => mq.removeEventListener("change", handleChange as any);
   }, []);
-
-  // For desktop, switch to a bottom-right mini-player when the inline
-  // player scrolls out of view. On mobile we always keep it at the top.
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    // When mobile or player hidden, ensure mini-player is off.
-    if (isMobile || !showInlinePlayer) {
-      setIsMiniPlayerDesktop(false);
-      return;
-    }
-
-    const el = inlinePlayerWrapperRef.current;
-    if (!el) return;
-
-    // Update measured height (used to insert spacer when fixed).
-    const updateHeight = () => {
-      setInlinePlayerHeight(el.getBoundingClientRect().height);
-    };
-
-    // Decide whether to show the mini-player by checking element's position
-    // relative to the viewport. If the element's bottom is <= 0 it's scrolled past.
-    const checkVisibility = () => {
-      const rect = el.getBoundingClientRect();
-      setIsMiniPlayerDesktop(rect.bottom <= 0);
-    };
-
-    // Run initial measurements
-    updateHeight();
-    checkVisibility();
-
-    // Listen to scroll/resize on window. Using getBoundingClientRect() makes this
-    // resilient to different scroll containers in many layouts; if your app uses
-    // a custom scroll container, we can attach to that element instead.
-    window.addEventListener("scroll", checkVisibility, { passive: true });
-    window.addEventListener("resize", () => {
-      updateHeight();
-      checkVisibility();
-    });
-
-    return () => {
-      window.removeEventListener("scroll", checkVisibility);
-      window.removeEventListener("resize", () => {
-        updateHeight();
-        checkVisibility();
-      });
-    };
-  }, [isMobile, showInlinePlayer]);
 
   // Keep the currently playing video in sync with the filtered list,
   // but only when the inline player is visible.
@@ -679,104 +628,90 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
       )}
 
       {showInlinePlayer && currentVideoId && (
-        <>
-          {!isMobile && isMiniPlayerDesktop && (
-            <div style={{ height: inlinePlayerHeight || 0 }} />
-          )}
+        <div
+          style={{
+            position: isMobile ? "sticky" : "relative",
+            top: isMobile ? 0 : undefined,
+            zIndex: 40,
+            marginBottom: "1.5rem",
+            paddingTop: isMobile ? "0.5rem" : 0,
+            background: isMobile
+              ? "linear-gradient(180deg, rgba(5,7,10,0.98) 0%, rgba(5,7,10,0.9) 60%, rgba(5,7,10,0) 100%)"
+              : "transparent",
+          }}
+        >
           <div
-            ref={inlinePlayerWrapperRef}
             style={{
-              position: isMobile
-                ? "sticky"
-                : isMiniPlayerDesktop
-                ? "fixed"
-                : "relative",
-              top: isMobile ? 0 : isMiniPlayerDesktop ? undefined : 0,
-              bottom: !isMobile && isMiniPlayerDesktop ? "1.5rem" : undefined,
-              right: !isMobile && isMiniPlayerDesktop ? "1.5rem" : undefined,
-              width: !isMobile && isMiniPlayerDesktop ? "320px" : "100%",
-              maxWidth: !isMobile && isMiniPlayerDesktop ? "360px" : "100%",
-              zIndex: 40,
-              marginBottom: isMiniPlayerDesktop ? 0 : "1.5rem",
-              paddingTop: isMobile ? "0.5rem" : 0,
-              background: isMobile
-                ? "linear-gradient(180deg, rgba(5,7,10,0.98) 0%, rgba(5,7,10,0.9) 60%, rgba(5,7,10,0) 100%)"
-                : "transparent",
+              borderRadius: "1.25rem",
+              overflow: "hidden",
+              border: "1px solid #1f2937",
+              background: "#020617",
             }}
           >
             <div
               style={{
-                borderRadius: "1.25rem",
-                overflow: "hidden",
-                border: "1px solid #1f2937",
-                background: "#020617",
+                position: "relative",
+                paddingBottom: isMobile ? "56.25%" : "40%",
+                height: 0,
               }}
             >
               <div
+                ref={playerContainerRef}
                 style={{
-                  position: "relative",
-                  paddingBottom: isMiniPlayerDesktop ? "56.25%" : isMobile ? "56.25%" : "40%",
-                  height: 0,
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: "100%",
+                  height: "100%",
                 }}
-              >
-                <div
-                  ref={playerContainerRef}
+              />
+            </div>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                padding: "0.5rem 0.75rem 0.75rem",
+                alignItems: "center",
+              }}
+            >
+              <span style={{ fontSize: "0.75rem", color: "#9ca3b8" }}>
+                Now playing {currentIndex + 1} / {playlistRows.length}
+              </span>
+              <div style={{ display: "flex", gap: "0.5rem" }}>
+                <button
+                  onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
+                  disabled={currentIndex <= 0}
                   style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    width: "100%",
-                    height: "100%",
+                    padding: "0.25rem 0.6rem",
+                    fontSize: "0.75rem",
+                    borderRadius: "999px",
+                    border: "1px solid #4b5563",
+                    background: currentIndex <= 0 ? "#020617" : "#020617",
+                    color: currentIndex <= 0 ? "#4b5563" : "#e5e7eb",
+                    cursor: currentIndex <= 0 ? "not-allowed" : "pointer",
                   }}
-                />
-              </div>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  padding: "0.5rem 0.75rem 0.75rem",
-                  alignItems: "center",
-                }}
-              >
-                <span style={{ fontSize: "0.75rem", color: "#9ca3b8" }}>
-                  Now playing {currentIndex + 1} / {playlistRows.length}
-                </span>
-                <div style={{ display: "flex", gap: "0.5rem" }}>
-                  <button
-                    onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
-                    disabled={currentIndex <= 0}
-                    style={{
-                      padding: "0.25rem 0.6rem",
-                      fontSize: "0.75rem",
-                      borderRadius: "999px",
-                      border: "1px solid #4b5563",
-                      background: currentIndex <= 0 ? "#020617" : "#020617",
-                      color: currentIndex <= 0 ? "#4b5563" : "#e5e7eb",
-                      cursor: currentIndex <= 0 ? "not-allowed" : "pointer",
-                    }}
-                  >
-                    Prev
-                  </button>
-                  <button
-                    onClick={() => setCurrentIndex((i) => Math.min(playlistRows.length - 1, i + 1))}
-                    disabled={currentIndex >= playlistRows.length - 1}
-                    style={{
-                      padding: "0.25rem 0.6rem",
-                      fontSize: "0.75rem",
-                      borderRadius: "999px",
-                      border: "1px solid #4b5563",
-                      background: currentIndex >= playlistRows.length - 1 ? "#020617" : "#020617",
-                      color: currentIndex >= playlistRows.length - 1 ? "#4b5563" : "#e5e7eb",
-                      cursor: currentIndex >= playlistRows.length - 1 ? "not-allowed" : "pointer",
-                    }}
-                  >
-                    Next
-                  </button>
-                </div>
+                >
+                  Prev
+                </button>
+                <button
+                  onClick={() => setCurrentIndex((i) => Math.min(playlistRows.length - 1, i + 1))}
+                  disabled={currentIndex >= playlistRows.length - 1}
+                  style={{
+                    padding: "0.25rem 0.6rem",
+                    fontSize: "0.75rem",
+                    borderRadius: "999px",
+                    border: "1px solid #4b5563",
+                    background: currentIndex >= playlistRows.length - 1 ? "#020617" : "#020617",
+                    color: currentIndex >= playlistRows.length - 1 ? "#4b5563" : "#e5e7eb",
+                    cursor: currentIndex >= playlistRows.length - 1 ? "not-allowed" : "pointer",
+                  }}
+                >
+                  Next
+                </button>
               </div>
             </div>
           </div>
-        </>
+        </div>
       )}
 
       <div className="space-y-8">
