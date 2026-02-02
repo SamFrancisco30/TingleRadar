@@ -28,5 +28,5 @@ app.include_router(api_router, prefix="/api")
 
 
 @app.get("/healthz")
-def healthcheck() -> dict[str, str]:
+def healthcheck() -> dict:
     return {"status": "ok"}
