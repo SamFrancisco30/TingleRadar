@@ -324,7 +324,7 @@ export default async function BrowsePage({
                   Narrow by duration, triggers, and roleplay.
                 </p>
               </div>
-              {(duration || selectedTags.length > 0 || channel) && (
+              {(duration || selectedTags.length > 0 || selectedChannelIds.length > 0) && (
                 <a
                   href="/browse"
                   style={{
@@ -382,7 +382,9 @@ export default async function BrowsePage({
                   const href = new URLSearchParams({
                     page: "1",
                     ...(active ? {} : { duration: b.id, tags: tagsParam }),
-                    ...(channel ? { channel } : {}),
+                    ...(selectedChannelIds.length
+                      ? { channels: selectedChannelIds.join(",") }
+                      : {}),
                   }).toString();
                   return (
                     <a
@@ -429,7 +431,9 @@ export default async function BrowsePage({
                     page: "1",
                     ...(duration ? { duration } : {}),
                     ...(nextTags.length ? { tags: nextTags.join(",") } : {}),
-                    ...(channel ? { channel } : {}),
+                    ...(selectedChannelIds.length
+                      ? { channels: selectedChannelIds.join(",") }
+                      : {}),
                   }).toString();
                   return (
                     <a
@@ -476,7 +480,9 @@ export default async function BrowsePage({
                     page: "1",
                     ...(duration ? { duration } : {}),
                     ...(nextTags.length ? { tags: nextTags.join(",") } : {}),
-                    ...(channel ? { channel } : {}),
+                    ...(selectedChannelIds.length
+                      ? { channels: selectedChannelIds.join(",") }
+                      : {}),
                   }).toString();
                   return (
                     <a
@@ -524,7 +530,9 @@ export default async function BrowsePage({
                       page: "1",
                       ...(duration ? { duration } : {}),
                       ...(nextTags.length ? { tags: nextTags.join(",") } : {}),
-                      ...(channel ? { channel } : {}),
+                      ...(selectedChannelIds.length
+                        ? { channels: selectedChannelIds.join(",") }
+                        : {}),
                     }).toString();
                     return (
                       <a
