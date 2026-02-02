@@ -151,9 +151,9 @@ const detectTypeTags = (video: RankingItem["video"]): string[] => {
 };
 
 const detectLanguage = (video: RankingItem["video"]): string => {
-  const bag = getSearchBag(video);
+  const title = (video.title || "").toLowerCase();
   for (const [code, regex] of languageDetectors) {
-    if (regex.test(bag)) {
+    if (regex.test(title)) {
       return code;
     }
   }
