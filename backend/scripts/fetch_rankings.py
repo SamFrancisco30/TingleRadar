@@ -306,7 +306,8 @@ def main() -> None:
             queries=args.queries,
         )
         list_name = args.name or f"ASMR Weekly Pulse {payload.generated_at:%Y-%m-%d}"
-        description = args.description or f"Queries: {', '.join(payload.queries)}"
+        # Default to an empty description so we don't surface internal query strings in the UI.
+        description = args.description or ""
         persist_ranking(
             session,
             payload,
