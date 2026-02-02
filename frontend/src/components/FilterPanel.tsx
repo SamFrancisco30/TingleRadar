@@ -91,7 +91,7 @@ export const chipStyle = (active?: boolean) => ({
 
 export type FilterPanelProps = {
   state: FilterState;
-  onChange: (newState: FilterState) => void;
+  onChange: (state: FilterState) => void;
 };
 
 export function FilterPanel({ state, onChange }: FilterPanelProps) {
