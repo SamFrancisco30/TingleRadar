@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 import { fetchPopularChannels, type ChannelSummary } from "./channels";
 import { ChannelFilterClient } from "./ChannelFilterClient";
-import { VideoCard } from "../components/VideoCard";
+import { VideoCard } from "../../components/VideoCard";
 
 const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
