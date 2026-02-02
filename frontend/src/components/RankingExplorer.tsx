@@ -185,6 +185,7 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
   const [syncState, setSyncState] = useState<"idle" | "syncing" | "success" | "error">("idle");
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [showInlinePlayer, setShowInlinePlayer] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [currentVideoId, setCurrentVideoId] = useState<string | null>(null);
 
   const normalized = useMemo(
@@ -252,14 +253,19 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
     }
     if (!playlistRows.length) {
       setCurrentVideoId(null);
+      setCurrentIndex(0);
       return;
     }
-    // If current video is not in the new filtered list, default to the top one.
-    const stillExists = currentVideoId && playlistRows.some((item) => item.video.youtube_id === currentVideoId);
-    if (!stillExists) {
-      setCurrentVideoId(playlistRows[0].video.youtube_id);
+    // Clamp currentIndex to valid range.
+    const clampedIndex = Math.min(currentIndex, playlistRows.length - 1);
+    if (clampedIndex !== currentIndex) {
+      setCurrentIndex(clampedIndex);
     }
-  }, [playlistRows, currentVideoId, showInlinePlayer]);
+    const nextId = playlistRows[clampedIndex].video.youtube_id;
+    if (nextId !== currentVideoId) {
+      setCurrentVideoId(nextId);
+    }
+  }, [playlistRows, currentIndex, currentVideoId, showInlinePlayer]);
 
   const playlistName = filtered[0]?.name ?? "TingleRadar Weekly Playlist";
   const playlistDescription = filtered[0]?.description ?? "Weekly ASMR playlist curated by TingleRadar.";
@@ -488,7 +494,7 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
           onClick={() => {
             if (!playlistRows.length) return;
             if (!showInlinePlayer) {
-              setCurrentVideoId(playlistRows[0].video.youtube_id);
+              setCurrentIndex(0);
               setShowInlinePlayer(true);
             } else {
               setShowInlinePlayer(false);
@@ -553,6 +559,50 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
               }}
             />
           </div>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              padding: "0.5rem 0.75rem 0.75rem",
+              alignItems: "center",
+            }}
+          >
+            <span style={{ fontSize: "0.75rem", color: "#9ca3af" }}>
+              Now playing {currentIndex + 1} / {playlistRows.length}
+            </span>
+            <div style={{ display: "flex", gap: "0.5rem" }}>
+              <button
+                onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
+                disabled={currentIndex <= 0}
+                style={{
+                  padding: "0.25rem 0.6rem",
+                  fontSize: "0.75rem",
+                  borderRadius: "999px",
+                  border: "1px solid #4b5563",
+                  background: currentIndex <= 0 ? "#020617" : "#020617",
+                  color: currentIndex <= 0 ? "#4b5563" : "#e5e7eb",
+                  cursor: currentIndex <= 0 ? "not-allowed" : "pointer",
+                }}
+              >
+                Prev
+              </button>
+              <button
+                onClick={() => setCurrentIndex((i) => Math.min(playlistRows.length - 1, i + 1))}
+                disabled={currentIndex >= playlistRows.length - 1}
+                style={{
+                  padding: "0.25rem 0.6rem",
+                  fontSize: "0.75rem",
+                  borderRadius: "999px",
+                  border: "1px solid #4b5563",
+                  background: currentIndex >= playlistRows.length - 1 ? "#020617" : "#020617",
+                  color: currentIndex >= playlistRows.length - 1 ? "#4b5563" : "#e5e7eb",
+                  cursor: currentIndex >= playlistRows.length - 1 ? "not-allowed" : "pointer",
+                }}
+              >
+                Next
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -569,11 +619,20 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
               </span>
             </div>
             <div style={{ marginTop: "1rem" }}>
-              {list.items.map((item) => {
-                const isActive = showInlinePlayer && item.video.youtube_id === currentVideoId;
+              {list.items.map((item, idx) => {
+                const isActive =
+                  showInlinePlayer &&
+                  playlistRows[currentIndex] &&
+                  playlistRows[currentIndex].video.youtube_id === item.video.youtube_id;
                 return (
                 <article
                   key={item.video.youtube_id}
+                  onClick={() => {
+                    if (!showInlinePlayer) {
+                      setShowInlinePlayer(true);
+                    }
+                    setCurrentIndex(idx);
+                  }}
                   style={{
                     display: "flex",
                     gap: "1rem",
