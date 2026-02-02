@@ -13,6 +13,7 @@ def browse_videos(
     page: int = 1,
     page_size: int = 50,
     channel_id: Optional[str] = None,
+    channel_ids: Optional[Sequence[str]] = None,
     duration_bucket: Optional[str] = None,
     tags: Optional[Sequence[str]] = None,
 ) -> Tuple[List[VideoBase], int]:
@@ -35,8 +36,12 @@ def browse_videos(
         page_size = 50
 
     query = db.query(VideoModel)
+    # Backwards-compatible single-channel filter.
     if channel_id:
         query = query.filter(VideoModel.channel_id == channel_id)
+    # Multi-channel OR filter takes precedence when provided.
+    if channel_ids:
+        query = query.filter(VideoModel.channel_id.in_(list(channel_ids)))
 
     # Duration bucket is handled at the SQL level so pagination reflects the filtered
     # subset as much as possible.

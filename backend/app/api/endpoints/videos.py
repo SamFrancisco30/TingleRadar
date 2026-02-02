@@ -13,7 +13,13 @@ router = APIRouter(prefix="/videos", tags=["videos"])
 def list_videos(
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
+    # Legacy single-channel param (kept for compatibility)
     channel_id: Optional[str] = Query(None),
+    # New multi-channel param: comma-separated channel ids
+    channels: Optional[str] = Query(
+        None,
+        description="Comma-separated channel ids (e.g. id1,id2,id3)",
+    ),
     duration_bucket: Optional[str] = Query(
         None,
         description="Duration bucket: short (2-5min), medium (5-15min), long (15+min)",
@@ -28,11 +34,16 @@ def list_videos(
     if tags:
         tag_list = [t.strip() for t in tags.split(",") if t.strip()]
 
+    channel_list: List[str] = []
+    if channels:
+        channel_list = [c.strip() for c in channels.split(",") if c.strip()]
+
     items, total = browse_videos(
         db,
         page=page,
         page_size=page_size,
         channel_id=channel_id,
+        channel_ids=channel_list,
         duration_bucket=duration_bucket,
         tags=tag_list,
     )

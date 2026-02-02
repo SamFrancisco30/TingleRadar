@@ -37,7 +37,7 @@ async function fetchVideos(
   options?: {
     duration?: string | null;
     tags?: string[];
-    channel?: string | null;
+    channels?: string[];
   }
 ): Promise<BrowseResponse | null> {
   if (!backendUrl) return null;
@@ -51,8 +51,8 @@ async function fetchVideos(
   if (options?.tags && options.tags.length > 0) {
     params.set("tags", options.tags.join(","));
   }
-  if (options?.channel) {
-    params.set("channel_id", options.channel);
+  if (options?.channels && options.channels.length > 0) {
+    params.set("channels", options.channels.join(","));
   }
 
   const res = await fetch(`${backendUrl}/videos?${params.toString()}`, {
@@ -110,11 +110,11 @@ const humanizeTag = (tag: string): string =>
 export default async function BrowsePage({
   searchParams,
 }: {
-  searchParams?: { page?: string; duration?: string; tags?: string; channel?: string };
+  searchParams?: { page?: string; duration?: string; tags?: string; channels?: string };
 }) {
   const page = Number(searchParams?.page ?? "1") || 1;
   const duration = searchParams?.duration ?? null;
-  const channel = searchParams?.channel ?? null;
+  const channelsParam = searchParams?.channels ?? "";
   const tagsParam = searchParams?.tags ?? "";
   const selectedTags = tagsParam
     ? tagsParam
@@ -123,9 +123,16 @@ export default async function BrowsePage({
         .filter(Boolean)
     : [];
 
+  const selectedChannelIds = channelsParam
+    ? channelsParam
+        .split(",")
+        .map((x) => x.trim())
+        .filter(Boolean)
+    : [];
+
   const channels: ChannelSummary[] = await fetchPopularChannels();
 
-  const data = await fetchVideos(page, { duration, tags: selectedTags, channel });
+  const data = await fetchVideos(page, { duration, tags: selectedTags, channels: selectedChannelIds });
 
   if (!backendUrl) {
     return (
@@ -352,7 +359,7 @@ export default async function BrowsePage({
                 channels={channels}
                 duration={duration}
                 tagsParam={tagsParam}
-                channel={channel}
+                selectedChannelIds={selectedChannelIds}
               />
             </div>
 

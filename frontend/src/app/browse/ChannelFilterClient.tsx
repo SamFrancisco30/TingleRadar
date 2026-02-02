@@ -7,14 +7,11 @@ interface Props {
   channels: ChannelSummary[];
   duration: string | null;
   tagsParam: string;
-  channel: string | null;
+  selectedChannelIds: string[];
 }
 
-export function ChannelFilterClient({ channels, duration, tagsParam, channel }: Props) {
-  const [query, setQuery] = useState<string>(() => {
-    const current = channels.find((c) => c.channel_id === channel);
-    return current ? current.channel_title : "";
-  });
+export function ChannelFilterClient({ channels, duration, tagsParam, selectedChannelIds }: Props) {
+  const [query, setQuery] = useState<string>("");
   const [open, setOpen] = useState<boolean>(false);
 
   const normalizedQuery = query.trim().toLowerCase();
@@ -26,12 +23,12 @@ export function ChannelFilterClient({ channels, duration, tagsParam, channel }: 
       .slice(0, 20);
   }, [channels, normalizedQuery]);
 
-  const applyChannel = (channelId: string | null) => {
+  const applyChannels = (channelIds: string[]) => {
     const params = new URLSearchParams();
     params.set("page", "1");
     if (duration) params.set("duration", duration);
     if (tagsParam) params.set("tags", tagsParam);
-    if (channelId) params.set("channel", channelId);
+    if (channelIds.length > 0) params.set("channels", channelIds.join(","));
     setOpen(false);
     window.location.href = `/browse?${params.toString()}`;
   };
@@ -67,7 +64,7 @@ export function ChannelFilterClient({ channels, duration, tagsParam, channel }: 
           onClick={() => {
             setQuery("");
             setOpen(false);
-            applyChannel(null);
+            applyChannels([]);
           }}
           style={{
             padding: "0.3rem 0.7rem",
@@ -101,12 +98,17 @@ export function ChannelFilterClient({ channels, duration, tagsParam, channel }: 
           }}
         >
           {filtered.map((c) => {
-            const isActive = c.channel_id === channel;
+            const isActive = selectedChannelIds.includes(c.channel_id);
             return (
               <button
                 key={c.channel_id}
                 type="button"
-                onClick={() => applyChannel(c.channel_id)}
+                onClick={() => {
+                  const next = isActive
+                    ? selectedChannelIds.filter((id) => id !== c.channel_id)
+                    : [...selectedChannelIds, c.channel_id];
+                  applyChannels(next);
+                }}
                 style={{
                   width: "100%",
                   textAlign: "left",
