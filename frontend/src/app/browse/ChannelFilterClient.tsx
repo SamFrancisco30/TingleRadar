@@ -15,6 +15,7 @@ export function ChannelFilterClient({ channels, duration, tagsParam, channel }: 
     const current = channels.find((c) => c.channel_id === channel);
     return current ? current.channel_title : "";
   });
+  const [open, setOpen] = useState<boolean>(false);
 
   const normalizedQuery = query.trim().toLowerCase();
 
@@ -31,6 +32,7 @@ export function ChannelFilterClient({ channels, duration, tagsParam, channel }: 
     if (duration) params.set("duration", duration);
     if (tagsParam) params.set("tags", tagsParam);
     if (channelId) params.set("channel", channelId);
+    setOpen(false);
     window.location.href = `/browse?${params.toString()}`;
   };
 
@@ -41,7 +43,15 @@ export function ChannelFilterClient({ channels, duration, tagsParam, channel }: 
           type="text"
           placeholder="Type to search channels"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onFocus={() => setOpen(true)}
+          onBlur={() => {
+            // Delay closing slightly so clicks on the dropdown still register.
+            setTimeout(() => setOpen(false), 100);
+          }}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setOpen(true);
+          }}
           style={{
             flex: 1,
             padding: "0.35rem 0.6rem",
@@ -56,6 +66,7 @@ export function ChannelFilterClient({ channels, duration, tagsParam, channel }: 
           type="button"
           onClick={() => {
             setQuery("");
+            setOpen(false);
             applyChannel(null);
           }}
           style={{
@@ -73,7 +84,7 @@ export function ChannelFilterClient({ channels, duration, tagsParam, channel }: 
         </button>
       </div>
 
-      {filtered.length > 0 && (
+      {open && filtered.length > 0 && (
         <div
           style={{
             position: "absolute",
