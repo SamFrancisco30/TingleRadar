@@ -270,50 +270,49 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
   // player scrolls out of view. On mobile we always keep it at the top.
   useEffect(() => {
     if (typeof window === "undefined") return;
+
+    // When mobile or player hidden, ensure mini-player is off.
     if (isMobile || !showInlinePlayer) {
       setIsMiniPlayerDesktop(false);
-      inlinePlayerAnchorRef.current = null;
       return;
     }
+
     const el = inlinePlayerWrapperRef.current;
     if (!el) return;
 
-    const updateAnchor = () => {
-      const rect = el.getBoundingClientRect();
-      inlinePlayerAnchorRef.current = {
-        top: rect.top + window.scrollY,
-        height: rect.height,
-      };
-    };
-
-    if (!isMiniPlayerDesktop) {
-      updateAnchor();
+    // Update measured height (used to insert spacer when fixed).
+    const updateHeight = () => {
       setInlinePlayerHeight(el.getBoundingClientRect().height);
-    }
-
-    const handleScroll = () => {
-      const anchor = inlinePlayerAnchorRef.current;
-      if (!anchor) return;
-      const threshold = anchor.top + anchor.height;
-      setIsMiniPlayerDesktop(window.scrollY >= threshold);
     };
 
-    const handleResize = () => {
-      if (!isMiniPlayerDesktop) {
-        updateAnchor();
-        setInlinePlayerHeight(el.getBoundingClientRect().height);
-      }
-      handleScroll();
+    // Decide whether to show the mini-player by checking element's position
+    // relative to the viewport. If the element's bottom is <= 0 it's scrolled past.
+    const checkVisibility = () => {
+      const rect = el.getBoundingClientRect();
+      setIsMiniPlayerDesktop(rect.bottom <= 0);
     };
 
-    handleScroll();
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    window.addEventListener("resize", handleResize);
+    // Run initial measurements
+    updateHeight();
+    checkVisibility();
+
+    // Listen to scroll/resize on window. Using getBoundingClientRect() makes this
+    // resilient to different scroll containers in many layouts; if your app uses
+    // a custom scroll container, we can attach to that element instead.
+    window.addEventListener("scroll", checkVisibility, { passive: true });
+    window.addEventListener("resize", () => {
+      updateHeight();
+      checkVisibility();
+    });
+
     return () => {
-      window.removeEventListener("scroll", handleScroll);
-      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("scroll", checkVisibility);
+      window.removeEventListener("resize", () => {
+        updateHeight();
+        checkVisibility();
+      });
     };
-  }, [isMobile, showInlinePlayer, isMiniPlayerDesktop]);
+  }, [isMobile, showInlinePlayer]);
 
   // Keep the currently playing video in sync with the filtered list,
   // but only when the inline player is visible.
@@ -740,7 +739,7 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
                   alignItems: "center",
                 }}
               >
-                <span style={{ fontSize: "0.75rem", color: "#9ca3af" }}>
+                <span style={{ fontSize: "0.75rem", color: "#9ca3b8" }}>
                   Now playing {currentIndex + 1} / {playlistRows.length}
                 </span>
                 <div style={{ display: "flex", gap: "0.5rem" }}>
