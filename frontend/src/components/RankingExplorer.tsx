@@ -275,16 +275,16 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
     const el = inlinePlayerWrapperRef.current;
     if (!el) return;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0];
-        setIsMiniPlayerDesktop(!entry.isIntersecting);
-      },
-      { threshold: 0.1 }
-    );
+    const handleScroll = () => {
+      const rect = el.getBoundingClientRect();
+      // When the inline player is entirely above the viewport, enable mini-player.
+      const isAboveViewport = rect.bottom <= 0;
+      setIsMiniPlayerDesktop(isAboveViewport);
+    };
 
-    observer.observe(el);
-    return () => observer.disconnect();
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
   }, [isMobile, showInlinePlayer]);
 
   // Keep the currently playing video in sync with the filtered list,
