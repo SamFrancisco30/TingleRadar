@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { VideoCard } from "./VideoCard";
 
 const durationBuckets = [
   { id: "short", label: "2-5 min", min: 120, max: 300 },
@@ -734,100 +735,28 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
                   playlistRows[currentIndex] &&
                   playlistRows[currentIndex].video.youtube_id === item.video.youtube_id;
                 return (
-                <article
+                <VideoCard
                   key={item.video.youtube_id}
+                  youtubeId={item.video.youtube_id}
+                  title={item.video.title}
+                  channelTitle={item.video.channel_title}
+                  thumbnailUrl={item.video.thumbnail_url}
+                  viewCount={item.video.view_count}
+                  likeCount={item.video.like_count}
+                  durationSeconds={item.video.duration}
+                  publishedAt={item.video.published_at}
+                  rank={item.rank}
+                  typeTags={item.type_tags.map((tag) => displayTag(tag))}
+                  languageLabel={languageLabels[item.language] || "English"}
+                  extraChips={[]}
+                  active={isActive}
                   onClick={() => {
                     if (!showInlinePlayer) {
                       setShowInlinePlayer(true);
                     }
                     setCurrentIndex(idx);
                   }}
-                  className="video-card"
-                  style={{
-                    display: "flex",
-                    gap: "1rem",
-                    marginBottom: "1rem",
-                    padding: "1rem",
-                    borderRadius: "1.25rem",
-                    border: isActive ? "1px solid #4ade80" : "1px solid #1e293b",
-                    background: isActive ? "rgba(22, 163, 74, 0.16)" : "rgba(15, 23, 42, 0.75)",
-                    boxShadow: "0 15px 40px rgba(2, 6, 23, 0.55)",
-                    alignItems: "center",
-                  }}
-                >
-                  <div className="video-card-thumbnail" style={{ minWidth: "180px", maxWidth: "220px" }}>
-                    <img
-                      src={item.video.thumbnail_url}
-                      alt={item.video.title}
-                      style={{
-                        width: "100%",
-                        height: "auto",
-                        aspectRatio: "16 / 9",
-                        objectFit: "cover",
-                        borderRadius: "1rem",
-                        filter: "brightness(0.9)",
-                      }}
-                    />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ letterSpacing: "0.3em", fontSize: "0.65rem", color: "#475569" }}>#{item.rank}</p>
-                    <a
-                      href={`https://youtube.com/watch?v=${item.video.youtube_id}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      style={{
-                        color: "#c084fc",
-                        fontSize: "1.2rem",
-                        fontWeight: 600,
-                        textDecoration: "none",
-                      }}
-                    >
-                      {item.video.title}
-                    </a>
-                    <div style={{ color: "#94a3b8", marginTop: "0.25rem" }}>{item.video.channel_title}</div>
-                    <div style={{ fontSize: "0.85rem", color: "#94a3b8" }}>
-                      Views {item.video.view_count.toLocaleString()} · Likes {item.video.like_count.toLocaleString()} · Published {new Date(item.video.published_at as any).toLocaleDateString()}
-                    </div>
-                    <div style={{ marginTop: "0.5rem", display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
-                      {item.type_tags.map((tag) => (
-                        <span
-                          key={tag}
-                          style={{
-                            fontSize: "0.65rem",
-                            borderRadius: "999px",
-                            border: "1px solid #475569",
-                            padding: "0.2rem 0.6rem",
-                            color: "#cbd5f5",
-                          }}
-                        >
-                          {displayTag(tag)}
-                        </span>
-                      ))}
-                      <span
-                        style={{
-                          fontSize: "0.65rem",
-                          borderRadius: "999px",
-                          border: "1px solid #475569",
-                          padding: "0.2rem 0.6rem",
-                          color: "#cbd5f5",
-                        }}
-                      >
-                        {languageLabels[item.language] || "English"}
-                      </span>
-                      <span
-                        style={{
-                          fontSize: "0.65rem",
-                          borderRadius: "999px",
-                          border: "1px solid #475569",
-                          padding: "0.2rem 0.6rem",
-                          color: "#cbd5f5",
-                        }}
-                      >
-                        {item.video.duration ? `${Math.round(item.video.duration / 60)} min` : "Unknown"}
-                      </span>
-                    </div>
-                  </div>
-                </article>
+                />
               )})}
             </div>
           </section>

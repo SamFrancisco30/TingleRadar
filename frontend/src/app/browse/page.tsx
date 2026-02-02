@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { fetchPopularChannels, type ChannelSummary } from "./channels";
 import { ChannelFilterClient } from "./ChannelFilterClient";
+import { VideoCard } from "../components/VideoCard";
 
 const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
@@ -688,98 +689,23 @@ export default async function BrowsePage({
 
           <div style={{ marginTop: "0.75rem" }}>
             {items.map((video) => (
-              <article
+              <VideoCard
                 key={video.youtube_id}
-                className="video-card"
-                style={{
-                  display: "flex",
-                  gap: "1rem",
-                  marginBottom: "1rem",
-                  padding: "1rem",
-                  borderRadius: "1.25rem",
-                  border: "1px solid #1e293b",
-                  background: "rgba(15, 23, 42, 0.75)",
-                  boxShadow: "0 15px 40px rgba(2, 6, 23, 0.55)",
-                  alignItems: "center",
-                }}
-              >
-                <div className="video-card-thumbnail" style={{ minWidth: "180px", maxWidth: "220px" }}>
-                  {video.thumbnail_url ? (
-                    <img
-                      src={video.thumbnail_url}
-                      alt={video.title}
-                      style={{
-                        width: "100%",
-                        height: "auto",
-                        aspectRatio: "16 / 9",
-                        objectFit: "cover",
-                        borderRadius: "1rem",
-                        filter: "brightness(0.9)",
-                      }}
-                    />
-                  ) : (
-                    <div
-                      style={{
-                        width: "100%",
-                        height: "120px",
-                        borderRadius: "1rem",
-                        background: "#020617",
-                      }}
-                    />
-                  )}
-                </div>
-
-                <div style={{ flex: 1 }}>
-                  <a
-                    href={`https://youtube.com/watch?v=${video.youtube_id}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{
-                      color: "#c084fc",
-                      fontSize: "1.2rem",
-                      fontWeight: 600,
-                      textDecoration: "none",
-                    }}
-                  >
-                    {video.title}
-                  </a>
-                  <div style={{ color: "#94a3b8", marginTop: "0.25rem", fontSize: "0.9rem" }}>
-                    {video.channel_title}
-                  </div>
-                  <div style={{ fontSize: "0.85rem", color: "#9ca3af", marginTop: "0.15rem" }}>
-                    Views {video.view_count.toLocaleString()} · Likes {video.like_count.toLocaleString()} · {formatDuration(video.duration)} · Published {new Date(video.published_at as any).toLocaleDateString()}
-                  </div>
-
-                  {video.computed_tags && video.computed_tags.length > 0 && (
-                    <div
-                      style={{
-                        marginTop: "0.5rem",
-                        display: "flex",
-                        flexWrap: "wrap",
-                        gap: "0.35rem",
-                      }}
-                    >
-                      {video.computed_tags.map((tag) => (
-                        <span
-                          key={tag}
-                          style={{
-                            fontSize: "0.65rem",
-                            borderRadius: "999px",
-                            border: "1px solid #475569",
-                            padding: "0.2rem 0.6rem",
-                            color: "#cbd5f5",
-                          }}
-                        >
-                          {tag
-                            .split("_")
-                            .map((part) => (part ? part[0].toUpperCase() + part.slice(1) : ""))
-                            .join(" ")}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </article>
+                youtubeId={video.youtube_id}
+                title={video.title}
+                channelTitle={video.channel_title}
+                thumbnailUrl={video.thumbnail_url}
+                viewCount={video.view_count}
+                likeCount={video.like_count}
+                durationSeconds={video.duration}
+                publishedAt={video.published_at}
+                extraChips={video.computed_tags?.map((tag) =>
+                  tag
+                    .split("_")
+                    .map((part) => (part ? part[0].toUpperCase() + part.slice(1) : ""))
+                    .join(" ")
+                )}
+              />
             ))}
 
             {items.length === 0 && (
