@@ -458,6 +458,7 @@ export default async function BrowsePage({
                     page: "1",
                     ...(duration ? { duration } : {}),
                     ...(nextTags.length ? { tags: nextTags.join(",") } : {}),
+                    ...(channel ? { channel } : {}),
                   }).toString();
                   return (
                     <a
@@ -504,6 +505,7 @@ export default async function BrowsePage({
                     page: "1",
                     ...(duration ? { duration } : {}),
                     ...(nextTags.length ? { tags: nextTags.join(",") } : {}),
+                    ...(channel ? { channel } : {}),
                   }).toString();
                   return (
                     <a
@@ -551,6 +553,7 @@ export default async function BrowsePage({
                       page: "1",
                       ...(duration ? { duration } : {}),
                       ...(nextTags.length ? { tags: nextTags.join(",") } : {}),
+                      ...(channel ? { channel } : {}),
                     }).toString();
                     return (
                       <a
