@@ -282,26 +282,32 @@ export function BrowseFilterClient({ channels }: BrowseFilterClientProps) {
                 { id: "likes_desc", label: "Most liked" },
               ].map((opt) => {
                 const active = (sort || "published_desc") === opt.id;
-                const nextParams = new URLSearchParams(searchParams.toString());
-                if (opt.id === "published_desc") {
-                  nextParams.delete("sort");
-                } else {
-                  nextParams.set("sort", opt.id);
-                }
-                nextParams.set("page", "1");
                 return (
                   <button
                     key={opt.id}
                     type="button"
-                    onClick={() =>
-                      router.push(`${pathname}?${nextParams.toString()}`, { scroll: false })
-                    }
+                    onClick={() => {
+                      const nextParams = new URLSearchParams(searchParams.toString());
+
+                      if (opt.id === "published_desc") {
+                        // Always reset to default: remove sort param
+                        nextParams.delete("sort");
+                      } else if (active) {
+                        // Clicking the active non-default sort returns to default
+                        nextParams.delete("sort");
+                      } else {
+                        nextParams.set("sort", opt.id);
+                      }
+
+                      nextParams.set("page", "1");
+                      router.push(`${pathname}?${nextParams.toString()}`, { scroll: false });
+                    }}
                     style={{
                       padding: "0.35rem 0.75rem",
                       borderRadius: "999px",
                       border: "1px solid",
                       borderColor: active ? "#2563eb" : "#475569",
-                      background: active ? "#2563eb" : "0f172a",
+                      background: active ? "#2563eb" : "#0f172a",
                       color: active ? "#fff" : "#e2e8f0",
                       fontSize: "0.7rem",
                       textDecoration: "none",
