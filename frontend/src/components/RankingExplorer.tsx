@@ -311,7 +311,11 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
     }
   };
 
-  const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || "";
+  const env = process.env.NEXT_PUBLIC_TINGLE_ENV ?? "product";
+  const API_BASE =
+    env === "test"
+      ? process.env.NEXT_PUBLIC_BACKEND_URL_TEST ?? "http://localhost:8000"
+      : process.env.NEXT_PUBLIC_BACKEND_URL || "";
 
   const handlePushToYouTube = async () => {
     if (!playlistRows.length) {
