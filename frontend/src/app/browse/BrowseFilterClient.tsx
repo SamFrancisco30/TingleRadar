@@ -11,6 +11,7 @@ import {
   talkingStyleOptions,
   roleplaySceneOptions,
 } from "../../components/FilterPanel";
+import { FilterHeader } from "../../components/FilterHeader";
 
 function parseFiltersFromSearchParams(searchParams: URLSearchParams): FilterState {
   const duration = searchParams.get("duration");
@@ -178,69 +179,14 @@ export function BrowseFilterClient({ channels }: BrowseFilterClientProps) {
         backdropFilter: "blur(8px)",
       }}
     >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-end",
-          marginBottom: "0.6rem",
-          gap: "0.75rem",
-        }}
-      >
-        <div>
-          <p
-            style={{
-              fontSize: "0.6rem",
-              letterSpacing: "0.3em",
-              textTransform: "uppercase",
-              color: "#94a3b8",
-              margin: 0,
-            }}
-          >
-            Filter catalog
-            {activeCount > 0 && (
-              <span style={{ fontSize: "0.7rem", color: "#9ca3af", marginLeft: "0.5rem" }}>
-                · {activeCount} active
-              </span>
-            )}
-          </p>
-        </div>
-        <div style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}>
-          {hasAnyFilter && (
-            <button
-              type="button"
-              onClick={handleClearFilters}
-              style={{
-                border: "1px solid #475569",
-                background: "transparent",
-                color: "#cbd5f5",
-                padding: "0.35rem 0.8rem",
-                borderRadius: "999px",
-                fontSize: "0.7rem",
-                cursor: "pointer",
-              }}
-            >
-              Clear
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={() => setFiltersCollapsed((v) => !v)}
-            style={{
-              border: "1px solid #475569",
-              background: "transparent",
-              color: "#cbd5f5",
-              padding: "0.35rem 0.8rem",
-              borderRadius: "999px",
-              fontSize: "0.7rem",
-              cursor: "pointer",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {filtersCollapsed ? "Show filters" : "Hide filters"}
-          </button>
-        </div>
-      </div>
+      <FilterHeader
+        label="Filter catalog"
+        activeCount={activeCount}
+        hasAnyFilter={hasAnyFilter}
+        filtersCollapsed={filtersCollapsed}
+        onToggleCollapsed={() => setFiltersCollapsed((v) => !v)}
+        onClear={hasAnyFilter ? handleClearFilters : undefined}
+      />
 
       {!filtersCollapsed && (
         <>
