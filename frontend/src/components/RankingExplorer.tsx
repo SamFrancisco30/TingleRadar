@@ -102,6 +102,7 @@ const filterByDuration = (item: RankingItem, bucketId: string) => {
 
 export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
   const [selectedRankingId, setSelectedRankingId] = useState<number | null>(null);
+  const [isWeekMenuOpen, setIsWeekMenuOpen] = useState(false);
 
   // Always default to the latest ranking (first in the list) when data changes.
   useEffect(() => {
@@ -417,51 +418,91 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
           }}
         >
           <FilterHeader
-          label="Filter catalog"
-          activeCount={activeCount}
-          hasAnyFilter={hasAnyFilter}
-          filtersCollapsed={filtersCollapsed}
-          hasBody={!filtersCollapsed}
-          onToggleCollapsed={() => setFiltersCollapsed((v) => !v)}
-          onClear={
-            hasAnyFilter
-              ? () =>
-                  setFilters({
-                    duration: null,
-                    triggerFilters: [],
-                    talkingStyleFilters: [],
-                    roleplayScenes: [],
-                    languageFilters: [],
-                  })
-              : undefined
-          }
-        />
+            label="Filter catalog"
+            activeCount={activeCount}
+            hasAnyFilter={hasAnyFilter}
+            filtersCollapsed={filtersCollapsed}
+            hasBody={!filtersCollapsed}
+            onToggleCollapsed={() => setFiltersCollapsed((v) => !v)}
+            onClear={
+              hasAnyFilter
+                ? () =>
+                    setFilters({
+                      duration: null,
+                      triggerFilters: [],
+                      talkingStyleFilters: [],
+                      roleplayScenes: [],
+                      languageFilters: [],
+                    })
+                : undefined
+            }
+          />
 
-          {/* Week selector */}
-          <select
-            value={selectedRankingId ?? ""}
-            onChange={(e) => {
-              const nextId = Number(e.target.value) || null;
-              setSelectedRankingId(nextId);
-            }}
-            style={{
-              background: "transparent",
-              color: "#cbd5f5",
-              borderRadius: "999px",
-              border: "1px solid #475569",
-              padding: "0.3rem 0.9rem",
-              fontSize: "0.7rem",
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-              appearance: "none" as any,
-            }}
-          >
-            {normalized.map((list) => (
-              <option key={list.id} value={list.id}>
-                {new Date(list.published_at).toLocaleDateString("en-US")}
-              </option>
-            ))}
-          </select>
+          {/* Week selector (custom pill + dropdown) */}
+          <div style={{ position: "relative" }}>
+            <button
+              type="button"
+              onClick={() => setIsWeekMenuOpen((v) => !v)}
+              style={{
+                background: "transparent",
+                color: "#e5e7eb",
+                borderRadius: "999px",
+                border: "1px solid #4b5563",
+                padding: "0.3rem 0.9rem",
+                fontSize: "0.75rem",
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+                cursor: "pointer",
+              }}
+            >
+              {(() => {
+                const current = normalized.find((l) => l.id === selectedRankingId) ?? normalized[0];
+                return current ? new Date(current.published_at).toLocaleDateString("en-US") : "";
+              })()}
+            </button>
+            {isWeekMenuOpen && (
+              <div
+                style={{
+                  position: "absolute",
+                  right: 0,
+                  marginTop: "0.25rem",
+                  borderRadius: "0.75rem",
+                  border: "1px solid #1f2937",
+                  background: "#020617",
+                  boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
+                  overflow: "hidden",
+                  zIndex: 30,
+                }}
+              >
+                {normalized.map((list) => {
+                  const isActive = list.id === selectedRankingId;
+                  return (
+                    <button
+                      key={list.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedRankingId(list.id);
+                        setIsWeekMenuOpen(false);
+                      }}
+                      style={{
+                        display: "block",
+                        width: "100%",
+                        textAlign: "right",
+                        padding: "0.4rem 0.9rem",
+                        fontSize: "0.75rem",
+                        border: "none",
+                        background: isActive ? "#111827" : "transparent",
+                        color: isActive ? "#e5e7eb" : "#9ca3af",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {new Date(list.published_at).toLocaleDateString("en-US")}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
 
         {!filtersCollapsed && <FilterPanel state={filters} onChange={setFilters} />}
