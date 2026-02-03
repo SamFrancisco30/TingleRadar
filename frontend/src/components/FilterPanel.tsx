@@ -404,23 +404,50 @@ export function FilterPanel({ state, onChange }: FilterPanelProps) {
               padding: "0.6rem 0.75rem",
             }}
           >
-            <input
-              type="text"
-              autoFocus
-              placeholder="Search tags to exclude..."
-              value={excludeQuery}
-              onChange={(e) => setExcludeQuery(e.target.value)}
+            <div
               style={{
-                width: "100%",
-                padding: "0.35rem 0.5rem",
-                borderRadius: "0.5rem",
-                border: "1px solid #4b5563",
-                background: "#020617",
-                color: "#e5e7eb",
-                fontSize: "0.75rem",
-                marginBottom: "0.4rem",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: "0.5rem",
+                marginBottom: "0.35rem",
               }}
-            />
+            >
+              <input
+                type="text"
+                autoFocus
+                placeholder="Search tags to exclude..."
+                value={excludeQuery}
+                onChange={(e) => setExcludeQuery(e.target.value)}
+                style={{
+                  flex: 1,
+                  padding: "0.35rem 0.5rem",
+                  borderRadius: "0.5rem",
+                  border: "1px solid #4b5563",
+                  background: "#020617",
+                  color: "#e5e7eb",
+                  fontSize: "0.75rem",
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setExcludeSearchOpen(false);
+                  setExcludeQuery("");
+                }}
+                style={{
+                  borderRadius: "999px",
+                  border: "1px solid #4b5563",
+                  background: "transparent",
+                  color: "#cbd5f5",
+                  fontSize: "0.7rem",
+                  padding: "0.2rem 0.6rem",
+                  cursor: "pointer",
+                }}
+              >
+                Done
+              </button>
+            </div>
             <div style={{ maxHeight: "180px", overflowY: "auto" }}>
               {filteredExcludeOptions.map((tag) => (
                 <button
