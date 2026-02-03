@@ -184,6 +184,7 @@ export function BrowseFilterClient({ channels }: BrowseFilterClientProps) {
         activeCount={activeCount}
         hasAnyFilter={hasAnyFilter}
         filtersCollapsed={filtersCollapsed}
+        hasBody={!filtersCollapsed}
         onToggleCollapsed={() => setFiltersCollapsed((v) => !v)}
         onClear={hasAnyFilter ? handleClearFilters : undefined}
       />

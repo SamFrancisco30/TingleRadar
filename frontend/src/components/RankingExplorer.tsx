@@ -393,10 +393,11 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
         }}
       >
         <FilterHeader
-          label="Filter by"
+          label="Filter catalog"
           activeCount={activeCount}
           hasAnyFilter={hasAnyFilter}
           filtersCollapsed={filtersCollapsed}
+          hasBody={!filtersCollapsed}
           onToggleCollapsed={() => setFiltersCollapsed((v) => !v)}
           onClear={
             hasAnyFilter

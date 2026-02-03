@@ -7,6 +7,7 @@ export type FilterHeaderProps = {
   activeCount: number;
   hasAnyFilter: boolean;
   filtersCollapsed: boolean;
+  hasBody?: boolean;
   onToggleCollapsed: () => void;
   onClear?: () => void;
 };
@@ -16,6 +17,7 @@ export const FilterHeader: React.FC<FilterHeaderProps> = ({
   activeCount,
   hasAnyFilter,
   filtersCollapsed,
+  hasBody = true,
   onToggleCollapsed,
   onClear,
 }) => {
@@ -26,7 +28,7 @@ export const FilterHeader: React.FC<FilterHeaderProps> = ({
         justifyContent: "space-between",
         alignItems: "center",
         gap: "0.75rem",
-        marginBottom: "0.6rem",
+        marginBottom: hasBody ? "0.6rem" : 0,
       }}
     >
       <div>
