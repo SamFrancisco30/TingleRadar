@@ -57,6 +57,7 @@ type RankingItem = {
 };
 
 type RankingList = {
+  id: number;
   name: string;
   description: string;
   published_at: string;
@@ -569,7 +570,7 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
 
       <div className="space-y-8">
         {filtered.map((list) => (
-          <section key={list.name} style={{ marginBottom: "2rem" }}>
+          <section key={list.id} style={{ marginBottom: "2rem" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
                 <h2 style={{ fontSize: "1.75rem", margin: 0 }}>Weekly Tingles</h2>

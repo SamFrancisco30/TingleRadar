@@ -87,6 +87,15 @@ def parse_arguments() -> argparse.Namespace:
         default=None,
         help="Override the YouTube API key (falls back to YOUTUBE_API_KEY in env).",
     )
+    parser.add_argument(
+        "--days-offset",
+        type=int,
+        default=0,
+        help=(
+            "Shift the 7-day window back by N days. "
+            "For example, --days-offset 7 approximates the previous week's rankings."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -292,8 +301,11 @@ def main() -> None:
         raise RuntimeError("YouTube API key is required—set YOUTUBE_API_KEY in the .env file")
 
     session = SessionLocal()
-    recent_threshold = datetime.now(timezone.utc) - timedelta(days=RECENT_DAYS)
-    published_after = get_published_after_iso()
+    # Allow shifting the 7-day lookback window backwards in time so we can
+    # regenerate "previous week" rankings by passing --days-offset N.
+    anchor = datetime.now(timezone.utc) - timedelta(days=args.days_offset)
+    recent_threshold = anchor - timedelta(days=RECENT_DAYS)
+    published_after = recent_threshold.strftime("%Y-%m-%dT%H:%M:%SZ")
     try:
         aggregated: "OrderedDict[str, None]" = OrderedDict()
         for query in args.queries:
@@ -305,7 +317,10 @@ def main() -> None:
             generated_at=datetime.now(timezone.utc),
             queries=args.queries,
         )
-        list_name = args.name or f"ASMR Weekly Pulse {payload.generated_at:%Y-%m-%d}"
+        # By default, label the list by the anchor date so shifted runs
+        # (via --days-offset) get a meaningful weekly stamp.
+        default_label_date = anchor.date()
+        list_name = args.name or f"ASMR Weekly Pulse {default_label_date:%Y-%m-%d}"
         # Default to an empty description so we don't surface internal query strings in the UI.
         description = args.description or ""
         persist_ranking(

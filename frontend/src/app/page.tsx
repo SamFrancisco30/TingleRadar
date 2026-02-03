@@ -19,6 +19,7 @@ type RankingItem = {
 };
 
 type RankingList = {
+  id: number;
   name: string;
   description: string;
   published_at: string;
@@ -56,6 +57,7 @@ type ApiRankingItem = {
 };
 
 type ApiRankingList = {
+  id: number;
   name: string;
   description: string;
   published_at: string;
@@ -80,6 +82,7 @@ async function fetchRankings(): Promise<RankingList[]> {
   const data = (await response.json()) as ApiRankingList[];
 
   return data.map((list) => ({
+    id: list.id,
     name: list.name,
     description: list.description ?? "",
     published_at: list.published_at,

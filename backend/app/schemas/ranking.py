@@ -12,6 +12,7 @@ class RankingItem(BaseModel):
 
 
 class RankingList(BaseModel):
+    id: int
     name: str
     description: str
     published_at: str
