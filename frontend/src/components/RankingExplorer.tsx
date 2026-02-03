@@ -572,8 +572,7 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
           <section key={list.name} style={{ marginBottom: "2rem" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
-                <h2 style={{ fontSize: "1.75rem", margin: 0 }}>{list.name}</h2>
-                <p style={{ color: "#94a3b8" }}>{list.description}</p>
+                <h2 style={{ fontSize: "1.75rem", margin: 0 }}>Weekly Tingles</h2>
               </div>
               <span style={{ fontSize: "0.9rem", color: "#94a3b8" }}>
                 {new Date(list.published_at).toLocaleDateString()}
