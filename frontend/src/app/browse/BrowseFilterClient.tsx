@@ -24,9 +24,16 @@ function parseFiltersFromSearchParams(searchParams: URLSearchParams): FilterStat
         .filter(Boolean)
     : [];
 
-  const triggerFilters = tagList.filter((t) => triggerTypeOptions.includes(t));
+  const rawTriggerFilters = tagList.filter((t) => triggerTypeOptions.includes(t));
   const talkingStyleFilters = tagList.filter((t) => talkingStyleOptions.includes(t));
   const roleplayScenes = tagList.filter((t) => roleplaySceneOptions.includes(t));
+
+  // 如果 URL 里有具体的 roleplay scene（rp_*），但没有显式带 roleplay，
+  // 在 UI 层仍然把 Roleplay 视为选中，以保持视觉和语义一致。
+  const triggerFilters =
+    roleplayScenes.length > 0 && !rawTriggerFilters.includes("roleplay")
+      ? [...rawTriggerFilters, "roleplay"]
+      : rawTriggerFilters;
 
   const languageFilters = languageParam ? [languageParam] : [];
 
