@@ -226,12 +226,24 @@ export function FilterPanel({ state, onChange }: FilterPanelProps) {
                   key={scene}
                   style={chipStyle(active)}
                   onClick={() => {
-                    onChange({
-                      ...state,
-                      roleplayScenes: active
-                        ? roleplayScenes.filter((s) => s !== scene)
-                        : [...roleplayScenes, scene],
-                    });
+                    if (active) {
+                      // Removing a scene does not auto-toggle off the Roleplay chip.
+                      onChange({
+                        ...state,
+                        roleplayScenes: roleplayScenes.filter((s) => s !== scene),
+                      });
+                    } else {
+                      // Adding a scene should also ensure the generic Roleplay chip is active.
+                      const nextScenes = [...roleplayScenes, scene];
+                      const hasRoleplay = triggerFilters.includes(ROLEPLAY_TRIGGER_ID);
+                      onChange({
+                        ...state,
+                        roleplayScenes: nextScenes,
+                        triggerFilters: hasRoleplay
+                          ? triggerFilters
+                          : [...triggerFilters, ROLEPLAY_TRIGGER_ID],
+                      });
+                    }
                   }}
                 >
                   {displayTag(scene)}
