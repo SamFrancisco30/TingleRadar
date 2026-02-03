@@ -2,10 +2,24 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export function NavBar() {
   const pathname = usePathname();
   const isBrowse = pathname.startsWith("/browse");
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(max-width: 640px)");
+    const update = (e: MediaQueryList | MediaQueryListEvent) => {
+      const matches = "matches" in e ? e.matches : (e as MediaQueryList).matches;
+      setIsMobile(matches);
+    };
+    update(mq);
+    mq.addEventListener("change", update as any);
+    return () => mq.removeEventListener("change", update as any);
+  }, []);
 
   return (
     <header
@@ -25,7 +39,8 @@ export function NavBar() {
           padding: "0.7rem 1.25rem",
           display: "flex",
           alignItems: "center",
-          justifyContent: "space-between",
+          justifyContent: isMobile ? "center" : "space-between",
+          flexDirection: isMobile ? "column" : "row",
         }}
       >
         <Link
@@ -47,6 +62,8 @@ export function NavBar() {
             gap: "1.25rem",
             fontSize: "0.85rem",
             alignItems: "center",
+            marginTop: isMobile ? "0.4rem" : 0,
+            justifyContent: "center",
           }}
         >
           <Link
