@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 export type FilterState = {
   duration: string | null;
@@ -108,6 +108,23 @@ export function FilterPanel({ state, onChange }: FilterPanelProps) {
 
   const [excludeSearchOpen, setExcludeSearchOpen] = useState(false);
   const [excludeQuery, setExcludeQuery] = useState("");
+  const excludePanelRef = useRef<HTMLDivElement | null>(null);
+
+  // Close exclude search when clicking outside the panel.
+  useEffect(() => {
+    if (!excludeSearchOpen) return;
+
+    const handleClick = (event: MouseEvent) => {
+      if (!excludePanelRef.current) return;
+      if (!excludePanelRef.current.contains(event.target as Node)) {
+        setExcludeSearchOpen(false);
+        setExcludeQuery("");
+      }
+    };
+
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [excludeSearchOpen]);
 
   const filteredExcludeOptions = useMemo(() => {
     const q = excludeQuery.toLowerCase().trim();
@@ -391,6 +408,7 @@ export function FilterPanel({ state, onChange }: FilterPanelProps) {
 
         {excludeSearchOpen && (
           <div
+            ref={excludePanelRef}
             style={{
               marginTop: "0.5rem",
               borderRadius: "0.75rem",
@@ -453,8 +471,8 @@ export function FilterPanel({ state, onChange }: FilterPanelProps) {
                       ...state,
                       excludeTags: [...excludeTags, tag],
                     });
-                    setExcludeSearchOpen(false);
-                    setExcludeQuery("");
+                    // 保持面板打开，让用户可以连续选择多个 tag；
+                    // 真正关闭由 Done 按钮或点击外部触发。
                   }}
                   style={{
                     display: "block",
