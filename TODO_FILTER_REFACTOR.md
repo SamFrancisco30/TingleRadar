@@ -1,6 +1,7 @@
-# TingleRadar Filter & Tag System TODO
+# TingleRadar Filter & Tag System
 
-> Snapshot of the current tasks we want to tackle next for the ranking UI.
+> This file used to track the planned refactor tasks for the ranking UI filters.
+> The major pieces of that work have now been implemented in `RankingExplorer` and `FilterPanel`.
 
 ## 1. Filter Structure Refactor
 
