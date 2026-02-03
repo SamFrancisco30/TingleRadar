@@ -10,6 +10,7 @@ from app.models import Video as VideoModel
 from app.schemas.ranking import RankingItem, RankingList
 from app.schemas.video import VideoBase
 from app.services.tagging import compute_tags_for_video
+from app.services.tag_votes import get_tag_vote_scores
 
 
 def fetch_ranking_by_id(db: Session, ranking_id: int) -> Optional[RankingList]:
@@ -49,7 +50,19 @@ def _build_ranking_payload(db: Session, ranking: RankingListModel) -> RankingLis
 
         video_payload = VideoBase.from_orm(video)
         # Attach computed tags so the frontend can filter by trigger/roleplay/etc.
-        video_payload.computed_tags = compute_tags_for_video(video)
+        auto_tags = compute_tags_for_video(video)
+        vote_scores = get_tag_vote_scores(db, video.youtube_id)
+
+        # Apply simple vote-based adjustments: heavily downvoted auto tags are
+        # suppressed; heavily upvoted non-auto tags are added.
+        effective_tags = set(auto_tags)
+        for tag, score in vote_scores.items():
+            if tag in effective_tags and score <= -3:
+                effective_tags.remove(tag)
+            elif tag not in effective_tags and score >= 3:
+                effective_tags.add(tag)
+
+        video_payload.computed_tags = list(effective_tags)
 
         ranking_items.append(
             RankingItem(
