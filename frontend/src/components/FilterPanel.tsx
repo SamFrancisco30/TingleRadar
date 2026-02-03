@@ -359,7 +359,7 @@ export function FilterPanel({ state, onChange }: FilterPanelProps) {
         >
           Exclude tags
         </p>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
           {/* Quick toggles for common exclusions */}
           {["mouth_sounds", "roleplay", "visual_asmr", "white_noise"].map((tag) => {
             const active = excludeTags.includes(tag);
