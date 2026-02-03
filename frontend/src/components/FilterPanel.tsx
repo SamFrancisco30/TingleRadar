@@ -360,28 +360,23 @@ export function FilterPanel({ state, onChange }: FilterPanelProps) {
           Exclude tags
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
-          {/* Quick toggles for common exclusions */}
-          {["mouth_sounds", "roleplay", "visual_asmr", "white_noise"].map((tag) => {
-            const active = excludeTags.includes(tag);
-            return (
-              <button
-                key={tag}
-                style={chipStyle(active)}
-                onClick={() => {
-                  onChange({
-                    ...state,
-                    excludeTags: active
-                      ? excludeTags.filter((t) => t !== tag)
-                      : [...excludeTags, tag],
-                  });
-                }}
-              >
-                {displayTag(tag)}
-              </button>
-            );
-          })}
+          {/* 已选中的排除标签 */}
+          {excludeTags.map((tag) => (
+            <button
+              key={tag}
+              style={chipStyle(true)}
+              onClick={() => {
+                onChange({
+                  ...state,
+                  excludeTags: excludeTags.filter((t) => t !== tag),
+                });
+              }}
+            >
+              {displayTag(tag)}
+            </button>
+          ))}
 
-          {/* Add more via search */}
+          {/* 添加新排除 tag 的入口 */}
           <button
             type="button"
             style={chipStyle(false)}
