@@ -449,7 +449,7 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
                 borderRadius: "999px",
                 border: "1px solid #4b5563",
                 padding: "0.3rem 0.9rem",
-                fontSize: "0.75rem",
+                fontSize: "0.7rem",
                 letterSpacing: "0.08em",
                 textTransform: "uppercase",
                 cursor: "pointer",
