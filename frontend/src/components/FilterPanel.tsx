@@ -1,5 +1,7 @@
 "use client";
 
+import { useMemo, useState } from "react";
+
 export type FilterState = {
   duration: string | null;
   triggerFilters: string[];
@@ -97,8 +99,25 @@ export type FilterPanelProps = {
   onChange: (state: FilterState) => void;
 };
 
+const EXCLUDABLE_TAGS = Array.from(
+  new Set([...triggerTypeOptions, ...talkingStyleOptions, ...roleplaySceneOptions])
+);
+
 export function FilterPanel({ state, onChange }: FilterPanelProps) {
-  const { duration, triggerFilters, talkingStyleFilters, roleplayScenes, languageFilters } = state;
+  const { duration, triggerFilters, talkingStyleFilters, roleplayScenes, languageFilters, excludeTags } = state;
+
+  const [excludeSearchOpen, setExcludeSearchOpen] = useState(false);
+  const [excludeQuery, setExcludeQuery] = useState("");
+
+  const filteredExcludeOptions = useMemo(() => {
+    const q = excludeQuery.toLowerCase().trim();
+    return EXCLUDABLE_TAGS.filter((tag) => {
+      if (excludeTags.includes(tag)) return false;
+      if (!q) return true;
+      const label = displayTag(tag).toLowerCase();
+      return label.includes(q) || tag.includes(q);
+    });
+  }, [excludeQuery, excludeTags]);
 
   return (
     <>
@@ -340,9 +359,10 @@ export function FilterPanel({ state, onChange }: FilterPanelProps) {
         >
           Exclude tags
         </p>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem", flexWrap: "wrap" }}>
+          {/* Quick toggles for common exclusions */}
           {["mouth_sounds", "roleplay", "visual_asmr", "white_noise"].map((tag) => {
-            const active = state.excludeTags.includes(tag);
+            const active = excludeTags.includes(tag);
             return (
               <button
                 key={tag}
@@ -351,8 +371,8 @@ export function FilterPanel({ state, onChange }: FilterPanelProps) {
                   onChange({
                     ...state,
                     excludeTags: active
-                      ? state.excludeTags.filter((t) => t !== tag)
-                      : [...state.excludeTags, tag],
+                      ? excludeTags.filter((t) => t !== tag)
+                      : [...excludeTags, tag],
                   });
                 }}
               >
@@ -360,7 +380,89 @@ export function FilterPanel({ state, onChange }: FilterPanelProps) {
               </button>
             );
           })}
+
+          {/* Add more via search */}
+          <button
+            type="button"
+            style={chipStyle(false)}
+            onClick={() => {
+              setExcludeSearchOpen(true);
+              setExcludeQuery("");
+            }}
+          >
+            + Add tag
+          </button>
         </div>
+
+        {excludeSearchOpen && (
+          <div
+            style={{
+              marginTop: "0.5rem",
+              borderRadius: "0.75rem",
+              border: "1px solid #1f2937",
+              background: "#020617",
+              padding: "0.6rem 0.75rem",
+            }}
+          >
+            <input
+              type="text"
+              autoFocus
+              placeholder="Search tags to exclude..."
+              value={excludeQuery}
+              onChange={(e) => setExcludeQuery(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "0.35rem 0.5rem",
+                borderRadius: "0.5rem",
+                border: "1px solid #4b5563",
+                background: "#020617",
+                color: "#e5e7eb",
+                fontSize: "0.75rem",
+                marginBottom: "0.4rem",
+              }}
+            />
+            <div style={{ maxHeight: "180px", overflowY: "auto" }}>
+              {filteredExcludeOptions.map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => {
+                    onChange({
+                      ...state,
+                      excludeTags: [...excludeTags, tag],
+                    });
+                    setExcludeSearchOpen(false);
+                    setExcludeQuery("");
+                  }}
+                  style={{
+                    display: "block",
+                    width: "100%",
+                    textAlign: "left",
+                    padding: "0.3rem 0.3rem",
+                    border: "none",
+                    background: "transparent",
+                    color: "#cbd5f5",
+                    fontSize: "0.75rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  {displayTag(tag)}
+                </button>
+              ))}
+              {filteredExcludeOptions.length === 0 && (
+                <p
+                  style={{
+                    fontSize: "0.7rem",
+                    color: "#6b7280",
+                    margin: 0,
+                  }}
+                >
+                  No matching tags.
+                </p>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
