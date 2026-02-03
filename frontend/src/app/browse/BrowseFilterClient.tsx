@@ -44,6 +44,7 @@ function parseFiltersFromSearchParams(searchParams: URLSearchParams): FilterStat
     talkingStyleFilters,
     roleplayScenes,
     languageFilters,
+    excludeTags: [], // Browse URL 目前不解析排除标签，可后续扩展
   };
 }
 
@@ -115,6 +116,7 @@ export function BrowseFilterClient({ channels }: BrowseFilterClientProps) {
     filters.talkingStyleFilters.length > 0 ||
     filters.roleplayScenes.length > 0 ||
     filters.languageFilters.length > 0 ||
+    filters.excludeTags.length > 0 ||
     selectedChannelIds.length > 0 ||
     !!sort;
 
@@ -124,6 +126,7 @@ export function BrowseFilterClient({ channels }: BrowseFilterClientProps) {
     filters.talkingStyleFilters.length +
     filters.roleplayScenes.length +
     filters.languageFilters.length +
+    filters.excludeTags.length +
     (selectedChannelIds.length ? 1 : 0) +
     (sort && sort !== "published_desc" ? 1 : 0);
 

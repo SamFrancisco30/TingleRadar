@@ -6,6 +6,7 @@ export type FilterState = {
   talkingStyleFilters: string[];
   roleplayScenes: string[];
   languageFilters: string[];
+  excludeTags: string[]; // tags to exclude from results
 };
 
 export const durationBuckets = [
@@ -320,6 +321,42 @@ export function FilterPanel({ state, onChange }: FilterPanelProps) {
                 }}
               >
                 {languageLabels[code]}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Exclude tags */}
+      <div style={{ marginTop: "0.9rem" }}>
+        <p
+          style={{
+            fontSize: "0.65rem",
+            letterSpacing: "0.3em",
+            textTransform: "uppercase",
+            color: "#9ca3af",
+            marginBottom: "0.3rem",
+          }}
+        >
+          Exclude tags
+        </p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
+          {["mouth_sounds", "roleplay", "visual_asmr", "white_noise"].map((tag) => {
+            const active = state.excludeTags.includes(tag);
+            return (
+              <button
+                key={tag}
+                style={chipStyle(active)}
+                onClick={() => {
+                  onChange({
+                    ...state,
+                    excludeTags: active
+                      ? state.excludeTags.filter((t) => t !== tag)
+                      : [...state.excludeTags, tag],
+                  });
+                }}
+              >
+                {displayTag(tag)}
               </button>
             );
           })}

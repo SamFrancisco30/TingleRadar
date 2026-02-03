@@ -116,6 +116,7 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
     talkingStyleFilters: [],
     roleplayScenes: [],
     languageFilters: [],
+    excludeTags: [],
   });
   const [syncState, setSyncState] = useState<"idle" | "syncing" | "success" | "error">("idle");
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
@@ -153,7 +154,14 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
       visibleRankings.map((list) => ({
         ...list,
         items: list.items.filter((item: any) => {
-          const { triggerFilters, talkingStyleFilters, roleplayScenes, languageFilters, duration } = filters;
+          const {
+            triggerFilters,
+            talkingStyleFilters,
+            roleplayScenes,
+            languageFilters,
+            duration,
+            excludeTags,
+          } = filters;
 
           // Trigger Type: OR within, AND with others
           if (triggerFilters.length > 0 && !triggerFilters.some((tag) => item.type_tags.includes(tag))) {
@@ -173,6 +181,10 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
             if (!roleplayScenes.some((scene) => item.type_tags.includes(scene))) {
               return false;
             }
+          }
+          // Excluded tags: if any selected exclude tag is present, drop the item.
+          if (excludeTags.length > 0 && excludeTags.some((tag) => item.type_tags.includes(tag))) {
+            return false;
           }
           // Language: OR within, AND with others
           if (languageFilters.length > 0 && !languageFilters.includes(item.language)) {
