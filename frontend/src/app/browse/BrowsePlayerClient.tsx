@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { InlinePlayer } from "../../components/InlinePlayer";
 import { InlinePlaylistControls } from "../../components/InlinePlaylistControls";
 import { VideoCard } from "../../components/VideoCard";
+import { displayTag } from "../../components/FilterPanel";
 import type { ApiVideo } from "./page";
 
 export type BrowsePlayerClientProps = {
@@ -78,12 +79,7 @@ export function BrowsePlayerClient({ items }: BrowsePlayerClientProps) {
               likeCount={video.like_count}
               durationSeconds={video.duration}
               publishedAt={video.published_at}
-              extraChips={video.computed_tags?.map((tag) =>
-                tag
-                  .split("_")
-                  .map((part) => (part ? part[0].toUpperCase() + part.slice(1) : ""))
-                  .join(" ")
-              )}
+              extraChips={video.computed_tags?.map((tag) => displayTag(tag))}
               active={isActive}
               onClick={() => handleCardClick(index)}
             />
