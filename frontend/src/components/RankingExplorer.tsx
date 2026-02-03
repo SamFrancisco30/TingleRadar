@@ -101,9 +101,14 @@ const filterByDuration = (item: RankingItem, bucketId: string) => {
 };
 
 export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
-  const [selectedRankingId, setSelectedRankingId] = useState<number | null>(
-    rankings.length ? rankings[0].id : null
-  );
+  const [selectedRankingId, setSelectedRankingId] = useState<number | null>(null);
+
+  // Always default to the latest ranking (first in the list) when data changes.
+  useEffect(() => {
+    if (rankings.length) {
+      setSelectedRankingId(rankings[0].id);
+    }
+  }, [rankings]);
   const [filters, setFilters] = useState<FilterState>({
     duration: null,
     triggerFilters: [],
@@ -440,12 +445,15 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
               setSelectedRankingId(nextId);
             }}
             style={{
-              background: "#020617",
-              color: "#e5e7eb",
+              background: "transparent",
+              color: "#cbd5f5",
               borderRadius: "999px",
-              border: "1px solid #4b5563",
-              padding: "0.3rem 0.75rem",
-              fontSize: "0.75rem",
+              border: "1px solid #475569",
+              padding: "0.3rem 0.9rem",
+              fontSize: "0.7rem",
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              appearance: "none" as any,
             }}
           >
             {normalized.map((list) => (
