@@ -31,7 +31,12 @@ export const metadata: Metadata = {
     "Weekly ASMR leaderboard built for whisper, no-talking, and immersive roleplay content.",
 };
 
-const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+const env = process.env.NEXT_PUBLIC_TINGLE_ENV ?? "product";
+
+const backendUrl =
+  env === "test"
+    ? process.env.NEXT_PUBLIC_BACKEND_URL_TEST ?? "http://localhost:8000"
+    : process.env.NEXT_PUBLIC_BACKEND_URL;
 
 type ApiRankingItem = {
   rank: number;

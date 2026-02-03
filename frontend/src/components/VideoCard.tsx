@@ -19,6 +19,17 @@ export type VideoCardProps = {
   active?: boolean;
 };
 
+const ROLEPLAY_SCENE_LABELS: Record<string, string> = {
+  "Rp Haircut": "Haircut",
+  "Rp Cranial": "Cranial nerve exam",
+  "Rp Dentist": "Dentist",
+};
+
+function formatChipLabel(label: string): string {
+  if (ROLEPLAY_SCENE_LABELS[label]) return ROLEPLAY_SCENE_LABELS[label];
+  return label;
+}
+
 function formatDuration(seconds?: number | null): string {
   if (!seconds) return "Unknown";
   const mins = Math.round(seconds / 60);
@@ -197,7 +208,7 @@ export const VideoCard: React.FC<VideoCardProps> = ({
                   color: "#cbd5f5",
                 }}
               >
-                {chip}
+                {formatChipLabel(chip)}
               </span>
             ))}
           </div>
