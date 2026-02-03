@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { InlinePlayer } from "../../components/InlinePlayer";
 import { InlinePlaylistControls } from "../../components/InlinePlaylistControls";
+import { VideoCard } from "../../components/VideoCard";
 import type { ApiVideo } from "./page";
 
 export type BrowsePlayerClientProps = {
@@ -34,6 +35,14 @@ export function BrowsePlayerClient({ items }: BrowsePlayerClientProps) {
     setCurrentIndex((i) => Math.min(size - 1, i + 1));
   };
 
+  const handleCardClick = (index: number) => {
+    if (!size) return;
+    if (!showInlinePlayer) {
+      setShowInlinePlayer(true);
+    }
+    setCurrentIndex(index);
+  };
+
   return (
     <>
       <InlinePlaylistControls
@@ -51,6 +60,42 @@ export function BrowsePlayerClient({ items }: BrowsePlayerClientProps) {
           onIndexChange={setCurrentIndex}
         />
       )}
+
+      <div style={{ marginTop: "0.75rem" }}>
+        {items.map((video, index) => {
+          const isActive =
+            showInlinePlayer &&
+            size > 0 &&
+            video.youtube_id === videoIds[currentIndex];
+          return (
+            <VideoCard
+              key={video.youtube_id}
+              youtubeId={video.youtube_id}
+              title={video.title}
+              channelTitle={video.channel_title}
+              thumbnailUrl={video.thumbnail_url}
+              viewCount={video.view_count}
+              likeCount={video.like_count}
+              durationSeconds={video.duration}
+              publishedAt={video.published_at}
+              extraChips={video.computed_tags?.map((tag) =>
+                tag
+                  .split("_")
+                  .map((part) => (part ? part[0].toUpperCase() + part.slice(1) : ""))
+                  .join(" ")
+              )}
+              active={isActive}
+              onClick={() => handleCardClick(index)}
+            />
+          );
+        })}
+
+        {items.length === 0 && (
+          <p style={{ fontSize: "0.9rem", color: "#9ca3af" }}>
+            No videos found yet. Try again after the next ingestion run.
+          </p>
+        )}
+      </div>
     </>
   );
 }

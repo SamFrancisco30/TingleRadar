@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 
 import { fetchPopularChannels, type ChannelSummary } from "./channels";
-import { VideoCard } from "../../components/VideoCard";
 import { BrowseFilterClient } from "./BrowseFilterClient";
 import { BrowsePlayerClient } from "./BrowsePlayerClient";
 
@@ -292,36 +291,8 @@ export default async function BrowsePage({
           {/* Filters */}
           <BrowseFilterClient channels={channels} />
 
-          {/* Inline player controls & player for current page */}
+          {/* Inline player controls, player, and list for current page */}
           <BrowsePlayerClient items={items} />
-
-          <div style={{ marginTop: "0.75rem" }}>
-            {items.map((video) => (
-              <VideoCard
-                key={video.youtube_id}
-                youtubeId={video.youtube_id}
-                title={video.title}
-                channelTitle={video.channel_title}
-                thumbnailUrl={video.thumbnail_url}
-                viewCount={video.view_count}
-                likeCount={video.like_count}
-                durationSeconds={video.duration}
-                publishedAt={video.published_at}
-                extraChips={video.computed_tags?.map((tag) =>
-                  tag
-                    .split("_")
-                    .map((part) => (part ? part[0].toUpperCase() + part.slice(1) : ""))
-                    .join(" ")
-                )}
-              />
-            ))}
-
-            {items.length === 0 && (
-              <p style={{ fontSize: "0.9rem", color: "#9ca3af" }}>
-                No videos found yet. Try again after the next ingestion run.
-              </p>
-            )}
-          </div>
 
           <Pagination />
         </div>
