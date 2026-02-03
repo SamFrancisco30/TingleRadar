@@ -1,4 +1,5 @@
 from datetime import datetime
+import re
 from typing import List, Optional
 
 from sqlalchemy.orm import Session
@@ -16,6 +17,21 @@ def fetch_ranking_by_id(db: Session, ranking_id: int) -> Optional[RankingList]:
     if not ranking:
         return None
     return _build_ranking_payload(db, ranking)
+
+
+def _extract_label_date(name: str, created_at: datetime) -> datetime:
+    """Use the YYYY-MM-DD suffix in the ranking name when present.
+
+    This keeps the weekly label stable even for backfilled lists that were
+    created later in time.
+    """
+    match = re.search(r"(\d{4}-\d{2}-\d{2})$", name)
+    if not match:
+        return created_at
+    try:
+        return datetime.strptime(match.group(1), "%Y-%m-%d")
+    except ValueError:
+        return created_at
 
 
 def _build_ranking_payload(db: Session, ranking: RankingListModel) -> RankingList:
@@ -42,11 +58,14 @@ def _build_ranking_payload(db: Session, ranking: RankingListModel) -> RankingLis
                 video=video_payload,
             )
         )
+
+    label_date = _extract_label_date(ranking.name, ranking.created_at)
+
     return RankingList(
         id=ranking.id,
         name=ranking.name,
         description=ranking.description or "",
-        published_at=ranking.created_at.isoformat(),
+        published_at=label_date.isoformat(),
         items=ranking_items,
     )
 

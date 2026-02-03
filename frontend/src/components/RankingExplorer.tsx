@@ -101,6 +101,9 @@ const filterByDuration = (item: RankingItem, bucketId: string) => {
 };
 
 export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
+  const [selectedRankingId, setSelectedRankingId] = useState<number | null>(
+    rankings.length ? rankings[0].id : null
+  );
   const [filters, setFilters] = useState<FilterState>({
     duration: null,
     triggerFilters: [],
@@ -133,9 +136,15 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
     [rankings]
   );
 
+  const visibleRankings = useMemo(() => {
+    if (!selectedRankingId) return normalized;
+    const found = normalized.find((list) => list.id === selectedRankingId);
+    return found ? [found] : normalized;
+  }, [normalized, selectedRankingId]);
+
   const filtered = useMemo(
     () =>
-      normalized.map((list) => ({
+      visibleRankings.map((list) => ({
         ...list,
         items: list.items.filter((item: any) => {
           const { triggerFilters, talkingStyleFilters, roleplayScenes, languageFilters, duration } = filters;
@@ -170,7 +179,7 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
           return true;
         }),
       })),
-    [normalized, filters]
+    [visibleRankings, filters]
   );
 
   const playlistRows = useMemo(() => filtered[0]?.items ?? [], [filtered]);
@@ -393,7 +402,16 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
           backdropFilter: "blur(10px)",
         }}
       >
-        <FilterHeader
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "0.75rem",
+            gap: "0.75rem",
+          }}
+        >
+          <FilterHeader
           label="Filter catalog"
           activeCount={activeCount}
           hasAnyFilter={hasAnyFilter}
@@ -413,6 +431,30 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
               : undefined
           }
         />
+
+          {/* Week selector */}
+          <select
+            value={selectedRankingId ?? ""}
+            onChange={(e) => {
+              const nextId = Number(e.target.value) || null;
+              setSelectedRankingId(nextId);
+            }}
+            style={{
+              background: "#020617",
+              color: "#e5e7eb",
+              borderRadius: "999px",
+              border: "1px solid #4b5563",
+              padding: "0.3rem 0.75rem",
+              fontSize: "0.75rem",
+            }}
+          >
+            {normalized.map((list) => (
+              <option key={list.id} value={list.id}>
+                {new Date(list.published_at).toLocaleDateString("en-US")}
+              </option>
+            ))}
+          </select>
+        </div>
 
         {!filtersCollapsed && <FilterPanel state={filters} onChange={setFilters} />}
       </div>
@@ -576,7 +618,7 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
                 <h2 style={{ fontSize: "1.75rem", margin: 0 }}>Weekly Tingles</h2>
               </div>
               <span style={{ fontSize: "0.9rem", color: "#94a3b8" }}>
-                {new Date(list.published_at).toLocaleDateString()}
+                {new Date(list.published_at).toLocaleDateString("en-US")}
               </span>
             </div>
             <div style={{ marginTop: "1rem" }}>
