@@ -445,6 +445,7 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
                       talkingStyleFilters: [],
                       roleplayScenes: [],
                       languageFilters: [],
+                      excludeTags: [],
                     })
                 : undefined
             }
