@@ -697,7 +697,7 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
                     languageLabel={languageLabels[item.language] || "English"}
                     extraChips={[]}
                     active={isActive}
-                    onClick={() => {
+                    onPlayClick={() => {
                       if (!showInlinePlayer) {
                         setShowInlinePlayer(true);
                       }

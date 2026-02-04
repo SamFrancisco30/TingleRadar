@@ -81,7 +81,7 @@ export function BrowsePlayerClient({ items }: BrowsePlayerClientProps) {
               publishedAt={video.published_at}
               extraChips={video.computed_tags?.map((tag) => displayTag(tag))}
               active={isActive}
-              onClick={() => handleCardClick(index)}
+              onPlayClick={() => handleCardClick(index)}
             />
           );
         })}
