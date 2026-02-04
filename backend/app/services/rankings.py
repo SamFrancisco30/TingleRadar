@@ -84,14 +84,20 @@ def _build_ranking_payload(db: Session, ranking: RankingListModel) -> RankingLis
 
 
 def fetch_weekly_rankings(db: Session) -> List[RankingList]:
-    query = (
+    """Return the most recent weekly ranking list only.
+
+    The API contract for /rankings/weekly still returns a list for
+    backwards-compatibility, but the payload contains just the latest
+    ranking. Older weeks remain in the database for historical analysis
+    and offline tooling.
+    """
+    latest = (
         db.query(RankingListModel)
         .order_by(RankingListModel.created_at.desc())
-        .limit(3)
-        .all()
+        .first()
     )
 
-    results: List[RankingList] = []
-    for ranking in query:
-        results.append(_build_ranking_payload(db, ranking))
-    return results
+    if not latest:
+        return []
+
+    return [_build_ranking_payload(db, latest)]

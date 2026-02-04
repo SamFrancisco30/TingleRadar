@@ -100,16 +100,9 @@ const filterByDuration = (item: RankingItem, bucketId: string) => {
   return duration >= (bucket as any).min;
 };
 
-export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
-  const [selectedRankingId, setSelectedRankingId] = useState<number | null>(null);
-  const [isWeekMenuOpen, setIsWeekMenuOpen] = useState(false);
-
-  // Always default to the latest ranking (first in the list) when data changes.
-  useEffect(() => {
-    if (rankings.length) {
-      setSelectedRankingId(rankings[0].id);
-    }
-  }, [rankings]);
+export function RankingExplorer({ ranking }: { ranking: RankingList }) {
+  // Filters apply over a single latest weekly list; older weeks are kept only
+  // for historical analysis and aren't exposed in the main UI.
   const [filters, setFilters] = useState<FilterState>({
     duration: null,
     triggerFilters: [],
@@ -127,33 +120,25 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
   const playerRef = useRef<any | null>(null);
 
   const normalized = useMemo(
-    () =>
-      rankings.map((list) => ({
-        ...list,
-        items: list.items.map((item) => {
-          const computed = (item.video as any).computed_tags as string[] | undefined;
-          const typeTags = computed && computed.length ? computed : detectTypeTags(item.video);
-          return {
-            ...item,
-            type_tags: typeTags,
-            language: detectLanguage(item.video),
-          } as RankingItem & { type_tags: string[]; language: string };
-        }),
-      })),
-    [rankings]
+    () => ({
+      ...ranking,
+      items: ranking.items.map((item) => {
+        const computed = (item.video as any).computed_tags as string[] | undefined;
+        const typeTags = computed && computed.length ? computed : detectTypeTags(item.video);
+        return {
+          ...item,
+          type_tags: typeTags,
+          language: detectLanguage(item.video),
+        } as RankingItem & { type_tags: string[]; language: string };
+      }),
+    }),
+    [ranking]
   );
 
-  const visibleRankings = useMemo(() => {
-    if (!selectedRankingId) return normalized;
-    const found = normalized.find((list) => list.id === selectedRankingId);
-    return found ? [found] : normalized;
-  }, [normalized, selectedRankingId]);
-
   const filtered = useMemo(
-    () =>
-      visibleRankings.map((list) => ({
-        ...list,
-        items: list.items.filter((item: any) => {
+    () => ({
+      ...normalized,
+      items: normalized.items.filter((item: any) => {
           const {
             triggerFilters,
             talkingStyleFilters,
@@ -196,11 +181,11 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
           }
           return true;
         }),
-      })),
-    [visibleRankings, filters]
+      }),
+    [normalized, filters]
   );
 
-  const playlistRows = useMemo(() => filtered[0]?.items ?? [], [filtered]);
+  const playlistRows = useMemo(() => filtered.items ?? [], [filtered]);
 
   const [isMobile, setIsMobile] = useState(false);
 
@@ -322,8 +307,8 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
     };
   }, []);
 
-  const playlistName = filtered[0]?.name ?? "TingleRadar Weekly Playlist";
-  const playlistDescription = filtered[0]?.description ?? "Weekly ASMR playlist curated by TingleRadar.";
+  const playlistName = filtered.name ?? "TingleRadar Weekly Playlist";
+  const playlistDescription = filtered.description ?? "Weekly ASMR playlist curated by TingleRadar.";
 
   const parseResponseError = async (response: Response) => {
     try {
@@ -597,118 +582,53 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
       )}
 
       <div className="space-y-8">
-        {filtered.map((list) => (
-          <section key={list.id} style={{ marginBottom: "2rem" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div>
-                <h2
-                  style={{
-                    fontSize: "1.6rem", // slightly smaller to avoid wrapping on mobile
-                    margin: 0,
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  Weekly Tingles
-                </h2>
-              </div>
-              {/* Week selector (moved next to title) */}
-              <div style={{ position: "relative" }}>
-                <button
-                  type="button"
-                  onClick={() => setIsWeekMenuOpen((v) => !v)}
-                  style={{
-                    background: "transparent",
-                    color: "#e5e7eb",
-                    borderRadius: "999px",
-                    border: "1px solid #4b5563",
-                    padding: "0.28rem 0.9rem",
-                    fontSize: "0.7rem",
-                    letterSpacing: "0.08em",
-                    textTransform: "uppercase",
-                    lineHeight: 1.1,
-                    cursor: "pointer",
-                  }}
-                >
-                  {new Date(list.published_at).toLocaleDateString("en-US")}
-                </button>
-                {isWeekMenuOpen && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      right: 0,
-                      marginTop: "0.25rem",
-                      borderRadius: "0.75rem",
-                      border: "1px solid #1f2937",
-                      background: "#020617",
-                      boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
-                      overflow: "hidden",
-                      zIndex: 30,
-                    }}
-                  >
-                    {normalized.map((option) => {
-                      const isActive = option.id === selectedRankingId;
-                      return (
-                        <button
-                          key={option.id}
-                          type="button"
-                          onClick={() => {
-                            setSelectedRankingId(option.id);
-                            setIsWeekMenuOpen(false);
-                          }}
-                          style={{
-                            display: "block",
-                            width: "100%",
-                            textAlign: "right",
-                            padding: "0.4rem 0.9rem",
-                            fontSize: "0.75rem",
-                            border: "none",
-                            background: isActive ? "#111827" : "transparent",
-                            color: isActive ? "#e5e7eb" : "#9ca3af",
-                            cursor: "pointer",
-                          }}
-                        >
-                          {new Date(option.published_at).toLocaleDateString("en-US")}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+        <section key={filtered.id} style={{ marginBottom: "2rem" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div>
+              <h2
+                style={{
+                  fontSize: "1.6rem", // slightly smaller to avoid wrapping on mobile
+                  margin: 0,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Weekly Tingles
+              </h2>
             </div>
-            <div style={{ marginTop: "1rem" }}>
-              {list.items.map((item: any, idx: number) => {
-                const isActive =
-                  showInlinePlayer &&
-                  playlistRows[currentIndex] &&
-                  playlistRows[currentIndex].video.youtube_id === item.video.youtube_id;
-                return (
-                  <VideoCard
-                    key={item.video.youtube_id}
-                    youtubeId={item.video.youtube_id}
-                    title={item.video.title}
-                    channelTitle={item.video.channel_title}
-                    thumbnailUrl={item.video.thumbnail_url}
-                    viewCount={item.video.view_count}
-                    likeCount={item.video.like_count}
-                    durationSeconds={item.video.duration}
-                    publishedAt={item.video.published_at}
-                    rank={item.rank}
-                    typeTags={item.type_tags.map((tag: string) => displayTag(tag))}
-                    languageLabel={languageLabels[item.language] || "English"}
-                    extraChips={[]}
-                    active={isActive}
-                    onPlayClick={() => {
-                      if (!showInlinePlayer) {
-                        setShowInlinePlayer(true);
-                      }
-                      setCurrentIndex(idx);
-                    }}
-                  />
-                );
-              })}
-            </div>
-          </section>
-        ))}
+          </div>
+          <div style={{ marginTop: "1rem" }}>
+            {filtered.items.map((item: any, idx: number) => {
+              const isActive =
+                showInlinePlayer &&
+                playlistRows[currentIndex] &&
+                playlistRows[currentIndex].video.youtube_id === item.video.youtube_id;
+              return (
+                <VideoCard
+                  key={item.video.youtube_id}
+                  youtubeId={item.video.youtube_id}
+                  title={item.video.title}
+                  channelTitle={item.video.channel_title}
+                  thumbnailUrl={item.video.thumbnail_url}
+                  viewCount={item.video.view_count}
+                  likeCount={item.video.like_count}
+                  durationSeconds={item.video.duration}
+                  publishedAt={item.video.published_at}
+                  rank={item.rank}
+                  typeTags={item.type_tags.map((tag: string) => displayTag(tag))}
+                  languageLabel={languageLabels[item.language] || "English"}
+                  extraChips={[]}
+                  active={isActive}
+                  onPlayClick={() => {
+                    if (!showInlinePlayer) {
+                      setShowInlinePlayer(true);
+                    }
+                    setCurrentIndex(idx);
+                  }}
+                />
+              );
+            })}
+          </div>
+        </section>
       </div>
     </div>
   );

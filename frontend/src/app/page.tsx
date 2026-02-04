@@ -64,14 +64,15 @@ type ApiRankingList = {
   items: ApiRankingItem[];
 };
 
-async function fetchRankings(): Promise<RankingList[]> {
+async function fetchRankings(): Promise<RankingList | null> {
   if (!backendUrl) {
-    return [];
+    return null;
   }
 
   const response = await fetch(`${backendUrl}/rankings/weekly`, {
     // This is a server component; fetch happens on the server.
-    cache: "no-store",
+    // Use incremental revalidation so navigating between pages stays fast.
+    next: { revalidate: 300 },
   });
 
   if (!response.ok) {
@@ -80,13 +81,15 @@ async function fetchRankings(): Promise<RankingList[]> {
   }
 
   const data = (await response.json()) as ApiRankingList[];
+  const latest = data[0];
+  if (!latest) return null;
 
-  return data.map((list) => ({
-    id: list.id,
-    name: list.name,
-    description: list.description ?? "",
-    published_at: list.published_at,
-    items: (list.items ?? [])
+  return {
+    id: latest.id,
+    name: latest.name,
+    description: latest.description ?? "",
+    published_at: latest.published_at,
+    items: (latest.items ?? [])
       .map((item) => ({
         rank: item.rank,
         score: item.score,
@@ -105,13 +108,13 @@ async function fetchRankings(): Promise<RankingList[]> {
         } as any,
       }))
       .filter((item) => item.video.youtube_id),
-  }));
+  };
 }
 
 export default async function HomePage() {
-  let rankings: RankingList[] = [];
+  let ranking: RankingList | null = null;
   try {
-    rankings = await fetchRankings();
+    ranking = await fetchRankings();
   } catch (error) {
     return (
       <div style={{ minHeight: "100vh", background: "#05070a", color: "#eee", padding: "3rem" }}>
@@ -138,17 +141,19 @@ export default async function HomePage() {
           </p>
         </header>
 
-        <div
-          style={{
-            borderRadius: "1.5rem",
-            background: "rgba(15, 20, 36, 0.75)",
-            border: "1px solid #1e293b",
-            padding: "2rem",
-            boxShadow: "0 20px 80px rgba(5, 6, 15, 0.45)",
-          }}
-        >
-          <RankingExplorer rankings={rankings} />
-        </div>
+        {ranking && (
+          <div
+            style={{
+              borderRadius: "1.5rem",
+              background: "rgba(15, 20, 36, 0.75)",
+              border: "1px solid #1e293b",
+              padding: "2rem",
+              boxShadow: "0 20px 80px rgba(5, 6, 15, 0.45)",
+            }}
+          >
+            <RankingExplorer ranking={ranking} />
+          </div>
+        )}
       </div>
     </div>
   );
