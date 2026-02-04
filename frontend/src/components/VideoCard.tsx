@@ -92,7 +92,9 @@ export const VideoCard: React.FC<VideoCardProps> = ({
 }) => {
   const Wrapper: React.ElementType = onClick ? "button" : "article";
 
-  const [tagMenuOpen, setTagMenuOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [editTagsMode, setEditTagsMode] = useState(false);
+  const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
 
   const getFingerprint = (): string => {
     if (typeof window === "undefined") return "anonymous";
@@ -127,6 +129,26 @@ export const VideoCard: React.FC<VideoCardProps> = ({
     }
   };
 
+  const toggleTagSelection = (tag: string) => {
+    setSelectedTags((prev) => {
+      const next = new Set(prev);
+      if (next.has(tag)) {
+        next.delete(tag);
+      } else {
+        next.add(tag);
+      }
+      return next;
+    });
+  };
+
+  const handleDoneEditing = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    // 对所有选中 tag 批量 downvote
+    await Promise.all(Array.from(selectedTags).map((tag) => sendTagVote(tag, -1)));
+    setSelectedTags(new Set());
+    setEditTagsMode(false);
+  };
+
   return (
     <Wrapper
       className="video-card"
@@ -145,8 +167,94 @@ export const VideoCard: React.FC<VideoCardProps> = ({
         textAlign: "left",
         cursor: onClick ? "pointer" : "default",
         borderColor: active ? "#4ade80" : "#1e293b",
+        position: "relative",
       }}
     >
+      {/* Card-level menu trigger */}
+      {typeTags && typeTags.length > 0 && (
+        <div
+          style={{
+            position: "absolute",
+            top: "0.75rem",
+            right: "0.75rem",
+            zIndex: 10,
+          }}
+        >
+          {!editTagsMode ? (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setMenuOpen((open) => !open);
+              }}
+              style={{
+                borderRadius: "999px",
+                border: "1px solid #4b5563",
+                background: "rgba(15,23,42,0.9)",
+                color: "#9ca3af",
+                fontSize: "0.7rem",
+                padding: "0.1rem 0.45rem",
+                cursor: "pointer",
+              }}
+            >
+              ⋯
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleDoneEditing}
+              style={{
+                borderRadius: "999px",
+                border: "1px solid #16a34a",
+                background: "#022c22",
+                color: "#bbf7d0",
+                fontSize: "0.7rem",
+                padding: "0.1rem 0.55rem",
+                cursor: "pointer",
+              }}
+            >
+              Done
+            </button>
+          )}
+
+          {menuOpen && !editTagsMode && (
+            <div
+              style={{
+                marginTop: "0.25rem",
+                borderRadius: "0.5rem",
+                border: "1px solid #1f2937",
+                background: "#020617",
+                boxShadow: "0 10px 20px rgba(0,0,0,0.6)",
+                padding: "0.25rem 0.4rem",
+                minWidth: "140px",
+              }}
+            >
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMenuOpen(false);
+                  setEditTagsMode(true);
+                  setSelectedTags(new Set());
+                }}
+                style={{
+                  width: "100%",
+                  textAlign: "left",
+                  border: "none",
+                  background: "transparent",
+                  color: "#e5e7eb",
+                  fontSize: "0.75rem",
+                  padding: "0.2rem 0.1rem",
+                  cursor: "pointer",
+                }}
+              >
+                Tag feedback
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="video-card-thumbnail" style={{ minWidth: "180px", maxWidth: "220px" }}>
         {thumbnailUrl ? (
           <img
@@ -206,20 +314,32 @@ export const VideoCard: React.FC<VideoCardProps> = ({
               position: "relative",
             }}
           >
-            {typeTags?.map((tag) => (
-              <span
-                key={tag}
-                style={{
-                  fontSize: "0.65rem",
-                  borderRadius: "999px",
-                  border: "1px solid #475569",
-                  padding: "0.2rem 0.6rem",
-                  color: "#cbd5f5",
-                }}
-              >
-                {tag}
-              </span>
-            ))}
+            {typeTags?.map((tag) => {
+              const selected = editTagsMode && selectedTags.has(tag);
+              return (
+                <button
+                  type="button"
+                  key={tag}
+                  onClick={(e) => {
+                    if (!editTagsMode) return;
+                    e.stopPropagation();
+                    toggleTagSelection(tag);
+                  }}
+                  style={{
+                    fontSize: "0.65rem",
+                    borderRadius: "999px",
+                    border: "1px solid",
+                    borderColor: selected ? "#b91c1c" : "#475569",
+                    padding: "0.2rem 0.6rem",
+                    color: selected ? "#fecaca" : "#cbd5f5",
+                    background: selected ? "#450a0a" : "transparent",
+                    cursor: editTagsMode ? "pointer" : "default",
+                  }}
+                >
+                  {tag}
+                </button>
+              );
+            })}
             {languageLabel && (
               <span
                 style={{
@@ -247,137 +367,6 @@ export const VideoCard: React.FC<VideoCardProps> = ({
                 {formatChipLabel(chip)}
               </span>
             ))}
-
-            {/* Feedback chip - primarily for mobile, but works on desktop too */}
-            {typeTags && typeTags.length > 0 && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setTagMenuOpen((open) => !open);
-                }}
-                style={{
-                  marginLeft: "auto",
-                  fontSize: "0.65rem",
-                  borderRadius: "999px",
-                  border: "1px solid #4b5563",
-                  padding: "0.2rem 0.6rem",
-                  color: "#cbd5f5",
-                  background: "transparent",
-                  cursor: "pointer",
-                }}
-              >
-                Tag feedback
-              </button>
-            )}
-
-            {tagMenuOpen && typeTags && typeTags.length > 0 && (
-              <div
-                style={{
-                  position: "absolute",
-                  right: 0,
-                  top: "100%",
-                  marginTop: "0.25rem",
-                  borderRadius: "0.75rem",
-                  border: "1px solid #1f2937",
-                  background: "#020617",
-                  boxShadow: "0 10px 30px rgba(0,0,0,0.6)",
-                  padding: "0.45rem 0.6rem",
-                  zIndex: 20,
-                  minWidth: "220px",
-                }}
-              >
-                <p
-                  style={{
-                    fontSize: "0.7rem",
-                    color: "#9ca3af",
-                    margin: "0 0 0.35rem",
-                  }}
-                >
-                  Tag feedback
-                </p>
-                <div style={{ maxHeight: "200px", overflowY: "auto" }}>
-                  {typeTags.map((tag) => (
-                    <div
-                      key={tag}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        gap: "0.5rem",
-                        marginBottom: "0.25rem",
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontSize: "0.7rem",
-                          color: "#e5e7eb",
-                        }}
-                      >
-                        {tag}
-                      </span>
-                      <div style={{ display: "flex", gap: "0.3rem" }}>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            sendTagVote(tag, 1);
-                          }}
-                          style={{
-                            borderRadius: "999px",
-                            border: "1px solid #16a34a",
-                            background: "#022c22",
-                            color: "#bbf7d0",
-                            fontSize: "0.65rem",
-                            padding: "0.15rem 0.5rem",
-                            cursor: "pointer",
-                          }}
-                        >
-                          ✓
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            sendTagVote(tag, -1);
-                          }}
-                          style={{
-                            borderRadius: "999px",
-                            border: "1px solid #b91c1c",
-                            background: "#450a0a",
-                            color: "#fecaca",
-                            fontSize: "0.65rem",
-                            padding: "0.15rem 0.5rem",
-                            cursor: "pointer",
-                          }}
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setTagMenuOpen(false);
-                  }}
-                  style={{
-                    marginTop: "0.35rem",
-                    borderRadius: "999px",
-                    border: "1px solid #4b5563",
-                    background: "transparent",
-                    color: "#cbd5f5",
-                    fontSize: "0.7rem",
-                    padding: "0.2rem 0.6rem",
-                    cursor: "pointer",
-                  }}
-                >
-                  Done
-                </button>
-              </div>
-            )}
           </div>
         )}
       </div>
