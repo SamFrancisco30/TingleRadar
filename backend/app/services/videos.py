@@ -36,6 +36,7 @@ def browse_videos(
     tags: Optional[Sequence[str]] = None,
     language: Optional[str] = None,
     sort: Optional[str] = None,
+    exclude_tags: Optional[Sequence[str]] = None,
 ) -> Tuple[List[VideoBase], int]:
     """Simple paginated browse over the videos catalog.
 
@@ -95,6 +96,7 @@ def browse_videos(
     rows = query.all()
 
     tag_set = set(tags or [])
+    exclude_set = set(exclude_tags or [])
     filtered: List[VideoBase] = []
     for video in rows:
         payload = VideoBase.from_orm(video)
@@ -106,6 +108,10 @@ def browse_videos(
             detected = _detect_language_from_title(payload.title or "")
             if detected != language:
                 continue
+
+        # Exclude videos that contain any of the excluded tags.
+        if exclude_set and any(tag in payload.computed_tags for tag in exclude_set):
+            continue
 
         if tag_set:
             # Require at least one overlap between requested tags and computed_tags.

@@ -36,6 +36,10 @@ def list_videos(
         None,
         description="Sort key: published_desc (default), views_desc, likes_desc",
     ),
+    exclude: Optional[str] = Query(
+        None,
+        description="Comma-separated tag ids to exclude (e.g. mouth_sounds,roleplay)",
+    ),
     db: Session = Depends(get_db),
 ) -> Dict[str, Any]:
     tag_list: List[str] = []
@@ -45,6 +49,10 @@ def list_videos(
     channel_list: List[str] = []
     if channels:
         channel_list = [c.strip() for c in channels.split(",") if c.strip()]
+
+    exclude_list: List[str] = []
+    if exclude:
+        exclude_list = [t.strip() for t in exclude.split(",") if t.strip()]
 
     items, total = browse_videos(
         db,
@@ -56,6 +64,7 @@ def list_videos(
         tags=tag_list,
         language=language,
         sort=sort,
+        exclude_tags=exclude_list,
     )
     return {
         "items": items,

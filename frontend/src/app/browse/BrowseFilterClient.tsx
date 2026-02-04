@@ -17,6 +17,7 @@ function parseFiltersFromSearchParams(searchParams: URLSearchParams): FilterStat
   const duration = searchParams.get("duration");
   const tagsParam = searchParams.get("tags") || "";
   const languageParam = searchParams.get("language") || "";
+  const excludeParam = searchParams.get("exclude") || "";
 
   const tagList = tagsParam
     ? tagsParam
@@ -38,13 +39,20 @@ function parseFiltersFromSearchParams(searchParams: URLSearchParams): FilterStat
 
   const languageFilters = languageParam ? [languageParam] : [];
 
+  const excludeTags = excludeParam
+    ? excludeParam
+        .split(",")
+        .map((x) => x.trim())
+        .filter(Boolean)
+    : [];
+
   return {
     duration: duration || null,
     triggerFilters,
     talkingStyleFilters,
     roleplayScenes,
     languageFilters,
-    excludeTags: [], // Browse URL 目前不解析排除标签，可后续扩展
+    excludeTags,
   };
 }
 
@@ -156,6 +164,13 @@ export function BrowseFilterClient({ channels }: BrowseFilterClientProps) {
       nextParams.delete("tags");
     }
 
+    // Exclude tags
+    if (nextFilters.excludeTags.length) {
+      nextParams.set("exclude", nextFilters.excludeTags.join(","));
+    } else {
+      nextParams.delete("exclude");
+    }
+
     nextParams.set("page", "1");
 
     router.push(`${pathname}?${nextParams.toString()}`, { scroll: false });
@@ -168,6 +183,7 @@ export function BrowseFilterClient({ channels }: BrowseFilterClientProps) {
     nextParams.delete("language");
     nextParams.delete("sort");
     nextParams.delete("page");
+    nextParams.delete("exclude");
     router.push(`${pathname}?${nextParams.toString()}`, { scroll: false });
   };
 
