@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useState } from "react";
 
 export type VideoCardProps = {
   youtubeId: string;
@@ -92,43 +92,7 @@ export const VideoCard: React.FC<VideoCardProps> = ({
 }) => {
   const Wrapper: React.ElementType = onClick ? "button" : "article";
 
-  const [isMobile, setIsMobile] = useState(false);
-  const [tagMenu, setTagMenu] = useState<{ tag: string } | null>(null);
-  const pressTimerRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const mq = window.matchMedia("(max-width: 768px)");
-    const update = (e: MediaQueryList | MediaQueryListEvent) => {
-      const target = e as MediaQueryList;
-      setIsMobile("matches" in target ? target.matches : (target as any).matches);
-    };
-    update(mq as any);
-    mq.addEventListener("change", update as any);
-    return () => mq.removeEventListener("change", update as any);
-  }, []);
-
-  const clearPressTimer = () => {
-    if (pressTimerRef.current != null) {
-      window.clearTimeout(pressTimerRef.current);
-      pressTimerRef.current = null;
-    }
-  };
-
-  const handleTagPressStart = (tag: string) => (e: React.TouchEvent | React.MouseEvent) => {
-    if (!isMobile) return; // 手机端长按才生效
-    e.stopPropagation();
-    clearPressTimer();
-    pressTimerRef.current = window.setTimeout(() => {
-      setTagMenu({ tag });
-    }, 600);
-  };
-
-  const handleTagPressEnd = (e: React.TouchEvent | React.MouseEvent) => {
-    if (!isMobile) return;
-    e.stopPropagation();
-    clearPressTimer();
-  };
+  const [tagMenuOpen, setTagMenuOpen] = useState(false);
 
   const getFingerprint = (): string => {
     if (typeof window === "undefined") return "anonymous";
@@ -148,7 +112,7 @@ export const VideoCard: React.FC<VideoCardProps> = ({
   const sendTagVote = async (tagLabel: string, vote: 1 | -1) => {
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
     if (!backendUrl) return;
-    const tagId = tagLabel; // 目前 typeTags 已经是 displayTag 之后的文案，这里简单直接传文案匹配后端标签集合
+    const tagId = tagLabel; // TODO: 将来这里可以从 display 文案映射回内部 tag id
     try {
       await fetch(`${backendUrl}/videos/${youtubeId}/tags/${encodeURIComponent(tagId)}/vote`, {
         method: "POST",
@@ -160,8 +124,6 @@ export const VideoCard: React.FC<VideoCardProps> = ({
       });
     } catch {
       // 静默失败即可，不打扰用户
-    } finally {
-      setTagMenu(null);
     }
   };
 
@@ -247,8 +209,6 @@ export const VideoCard: React.FC<VideoCardProps> = ({
             {typeTags?.map((tag) => (
               <span
                 key={tag}
-                onTouchStart={handleTagPressStart(tag)}
-                onTouchEnd={handleTagPressEnd}
                 style={{
                   fontSize: "0.65rem",
                   borderRadius: "999px",
@@ -288,7 +248,30 @@ export const VideoCard: React.FC<VideoCardProps> = ({
               </span>
             ))}
 
-            {tagMenu && (
+            {/* Feedback chip - primarily for mobile, but works on desktop too */}
+            {typeTags && typeTags.length > 0 && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setTagMenuOpen((open) => !open);
+                }}
+                style={{
+                  marginLeft: "auto",
+                  fontSize: "0.65rem",
+                  borderRadius: "999px",
+                  border: "1px solid #4b5563",
+                  padding: "0.2rem 0.6rem",
+                  color: "#cbd5f5",
+                  background: "transparent",
+                  cursor: "pointer",
+                }}
+              >
+                Tag feedback
+              </button>
+            )}
+
+            {tagMenuOpen && typeTags && typeTags.length > 0 && (
               <div
                 style={{
                   position: "absolute",
@@ -301,6 +284,7 @@ export const VideoCard: React.FC<VideoCardProps> = ({
                   boxShadow: "0 10px 30px rgba(0,0,0,0.6)",
                   padding: "0.45rem 0.6rem",
                   zIndex: 20,
+                  minWidth: "220px",
                 }}
               >
                 <p
@@ -310,46 +294,88 @@ export const VideoCard: React.FC<VideoCardProps> = ({
                     margin: "0 0 0.35rem",
                   }}
                 >
-                  Tag: {tagMenu.tag}
+                  Tag feedback
                 </p>
-                <div style={{ display: "flex", gap: "0.4rem" }}>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      sendTagVote(tagMenu.tag, 1);
-                    }}
-                    style={{
-                      borderRadius: "999px",
-                      border: "1px solid #16a34a",
-                      background: "#022c22",
-                      color: "#bbf7d0",
-                      fontSize: "0.7rem",
-                      padding: "0.2rem 0.6rem",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Looks right
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      sendTagVote(tagMenu.tag, -1);
-                    }}
-                    style={{
-                      borderRadius: "999px",
-                      border: "1px solid #b91c1c",
-                      background: "#450a0a",
-                      color: "#fecaca",
-                      fontSize: "0.7rem",
-                      padding: "0.2rem 0.6rem",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Not accurate
-                  </button>
+                <div style={{ maxHeight: "200px", overflowY: "auto" }}>
+                  {typeTags.map((tag) => (
+                    <div
+                      key={tag}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: "0.5rem",
+                        marginBottom: "0.25rem",
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: "0.7rem",
+                          color: "#e5e7eb",
+                        }}
+                      >
+                        {tag}
+                      </span>
+                      <div style={{ display: "flex", gap: "0.3rem" }}>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            sendTagVote(tag, 1);
+                          }}
+                          style={{
+                            borderRadius: "999px",
+                            border: "1px solid #16a34a",
+                            background: "#022c22",
+                            color: "#bbf7d0",
+                            fontSize: "0.65rem",
+                            padding: "0.15rem 0.5rem",
+                            cursor: "pointer",
+                          }}
+                        >
+                          ✓
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            sendTagVote(tag, -1);
+                          }}
+                          style={{
+                            borderRadius: "999px",
+                            border: "1px solid #b91c1c",
+                            background: "#450a0a",
+                            color: "#fecaca",
+                            fontSize: "0.65rem",
+                            padding: "0.15rem 0.5rem",
+                            cursor: "pointer",
+                          }}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setTagMenuOpen(false);
+                  }}
+                  style={{
+                    marginTop: "0.35rem",
+                    borderRadius: "999px",
+                    border: "1px solid #4b5563",
+                    background: "transparent",
+                    color: "#cbd5f5",
+                    fontSize: "0.7rem",
+                    padding: "0.2rem 0.6rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  Done
+                </button>
               </div>
             )}
           </div>
