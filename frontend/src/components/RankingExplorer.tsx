@@ -601,7 +601,15 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
           <section key={list.id} style={{ marginBottom: "2rem" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
-                <h2 style={{ fontSize: "1.75rem", margin: 0 }}>Weekly Tingles</h2>
+                <h2
+                  style={{
+                    fontSize: "1.6rem", // slightly smaller to avoid wrapping on mobile
+                    margin: 0,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Weekly Tingles
+                </h2>
               </div>
               {/* Week selector (moved next to title) */}
               <div style={{ position: "relative" }}>
