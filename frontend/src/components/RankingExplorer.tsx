@@ -424,7 +424,7 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
           style={{
             display: "flex",
             justifyContent: "space-between",
-            alignItems: "center",
+            alignItems: "flex-end",
             marginBottom: "0.75rem",
             gap: "0.75rem",
           }}
@@ -461,10 +461,11 @@ export function RankingExplorer({ rankings }: { rankings: RankingList[] }) {
                 color: "#e5e7eb",
                 borderRadius: "999px",
                 border: "1px solid #4b5563",
-                padding: "0.3rem 0.9rem",
+                padding: "0.28rem 0.9rem",
                 fontSize: "0.7rem",
                 letterSpacing: "0.08em",
                 textTransform: "uppercase",
+                lineHeight: 1.1,
                 cursor: "pointer",
               }}
             >
