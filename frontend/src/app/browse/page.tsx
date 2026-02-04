@@ -93,6 +93,7 @@ export default async function BrowsePage({
     channels?: string;
     language?: string;
     sort?: string;
+    exclude?: string;
   };
 }) {
   const page = Number(searchParams?.page ?? "1") || 1;
@@ -101,6 +102,7 @@ export default async function BrowsePage({
   const sort = searchParams?.sort ?? null;
   const channelsParam = searchParams?.channels ?? "";
   const tagsParam = searchParams?.tags ?? "";
+  const excludeParam = searchParams?.exclude ?? "";
 
   const selectedTags = tagsParam
     ? tagsParam
@@ -111,6 +113,13 @@ export default async function BrowsePage({
 
   const selectedChannelIds = channelsParam
     ? channelsParam
+        .split(",")
+        .map((x) => x.trim())
+        .filter(Boolean)
+    : [];
+
+  const selectedExcludeTags = excludeParam
+    ? excludeParam
         .split(",")
         .map((x) => x.trim())
         .filter(Boolean)
@@ -133,6 +142,7 @@ export default async function BrowsePage({
     channels: selectedChannelIds,
     language,
     sort,
+    exclude: selectedExcludeTags,
   });
 
   if (!backendUrl) {
