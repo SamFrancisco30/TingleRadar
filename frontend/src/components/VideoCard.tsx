@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 export type VideoCardProps = {
   youtubeId: string;
@@ -92,6 +92,79 @@ export const VideoCard: React.FC<VideoCardProps> = ({
 }) => {
   const Wrapper: React.ElementType = onClick ? "button" : "article";
 
+  const [isMobile, setIsMobile] = useState(false);
+  const [tagMenu, setTagMenu] = useState<{ tag: string } | null>(null);
+  const pressTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(max-width: 768px)");
+    const update = (e: MediaQueryList | MediaQueryListEvent) => {
+      const target = e as MediaQueryList;
+      setIsMobile("matches" in target ? target.matches : (target as any).matches);
+    };
+    update(mq as any);
+    mq.addEventListener("change", update as any);
+    return () => mq.removeEventListener("change", update as any);
+  }, []);
+
+  const clearPressTimer = () => {
+    if (pressTimerRef.current != null) {
+      window.clearTimeout(pressTimerRef.current);
+      pressTimerRef.current = null;
+    }
+  };
+
+  const handleTagPressStart = (tag: string) => (e: React.TouchEvent | React.MouseEvent) => {
+    if (!isMobile) return; // 手机端长按才生效
+    e.stopPropagation();
+    clearPressTimer();
+    pressTimerRef.current = window.setTimeout(() => {
+      setTagMenu({ tag });
+    }, 600);
+  };
+
+  const handleTagPressEnd = (e: React.TouchEvent | React.MouseEvent) => {
+    if (!isMobile) return;
+    e.stopPropagation();
+    clearPressTimer();
+  };
+
+  const getFingerprint = (): string => {
+    if (typeof window === "undefined") return "anonymous";
+    try {
+      const key = "tr_fingerprint";
+      let id = window.localStorage.getItem(key);
+      if (!id) {
+        id = (window.crypto?.randomUUID?.() || Math.random().toString(36).slice(2)) as string;
+        window.localStorage.setItem(key, id);
+      }
+      return id;
+    } catch {
+      return "anonymous";
+    }
+  };
+
+  const sendTagVote = async (tagLabel: string, vote: 1 | -1) => {
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+    if (!backendUrl) return;
+    const tagId = tagLabel; // 目前 typeTags 已经是 displayTag 之后的文案，这里简单直接传文案匹配后端标签集合
+    try {
+      await fetch(`${backendUrl}/videos/${youtubeId}/tags/${encodeURIComponent(tagId)}/vote`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-User-Fingerprint": getFingerprint(),
+        },
+        body: JSON.stringify({ vote }),
+      });
+    } catch {
+      // 静默失败即可，不打扰用户
+    } finally {
+      setTagMenu(null);
+    }
+  };
+
   return (
     <Wrapper
       className="video-card"
@@ -168,11 +241,14 @@ export const VideoCard: React.FC<VideoCardProps> = ({
               display: "flex",
               flexWrap: "wrap",
               gap: "0.35rem",
+              position: "relative",
             }}
           >
             {typeTags?.map((tag) => (
               <span
                 key={tag}
+                onTouchStart={handleTagPressStart(tag)}
+                onTouchEnd={handleTagPressEnd}
                 style={{
                   fontSize: "0.65rem",
                   borderRadius: "999px",
@@ -211,6 +287,71 @@ export const VideoCard: React.FC<VideoCardProps> = ({
                 {formatChipLabel(chip)}
               </span>
             ))}
+
+            {tagMenu && (
+              <div
+                style={{
+                  position: "absolute",
+                  right: 0,
+                  top: "100%",
+                  marginTop: "0.25rem",
+                  borderRadius: "0.75rem",
+                  border: "1px solid #1f2937",
+                  background: "#020617",
+                  boxShadow: "0 10px 30px rgba(0,0,0,0.6)",
+                  padding: "0.45rem 0.6rem",
+                  zIndex: 20,
+                }}
+              >
+                <p
+                  style={{
+                    fontSize: "0.7rem",
+                    color: "#9ca3af",
+                    margin: "0 0 0.35rem",
+                  }}
+                >
+                  Tag: {tagMenu.tag}
+                </p>
+                <div style={{ display: "flex", gap: "0.4rem" }}>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      sendTagVote(tagMenu.tag, 1);
+                    }}
+                    style={{
+                      borderRadius: "999px",
+                      border: "1px solid #16a34a",
+                      background: "#022c22",
+                      color: "#bbf7d0",
+                      fontSize: "0.7rem",
+                      padding: "0.2rem 0.6rem",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Looks right
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      sendTagVote(tagMenu.tag, -1);
+                    }}
+                    style={{
+                      borderRadius: "999px",
+                      border: "1px solid #b91c1c",
+                      background: "#450a0a",
+                      color: "#fecaca",
+                      fontSize: "0.7rem",
+                      padding: "0.2rem 0.6rem",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Not accurate
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
