@@ -291,32 +291,35 @@ export const VideoCard: React.FC<VideoCardProps> = ({
               marginTop: "0.6rem",
               display: "flex",
               alignItems: "center",
-              justifyContent: "space-between",
-              gap: "0.5rem",
+              justifyContent: "flex-end",
+              gap: "0.4rem",
             }}
           >
-            <div>
-              {onPlayClick && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onPlayClick();
-                  }}
-                  style={{
-                    borderRadius: "999px",
-                    border: "1px solid #4b5563",
-                    background: "#020617",
-                    color: "#e5e7eb",
-                    fontSize: "0.75rem",
-                    padding: "0.25rem 0.8rem",
-                    cursor: "pointer",
-                  }}
-                >
-                  Play here
-                </button>
-              )}
-            </div>
+            {onPlayClick && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onPlayClick();
+                }}
+                aria-label="Play in inline player"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: "1.6rem",
+                  height: "1.6rem",
+                  borderRadius: "999px",
+                  border: "1px solid #4b5563",
+                  background: "#020617",
+                  color: "#c084fc", // same as title color
+                  fontSize: "0.9rem",
+                  cursor: "pointer",
+                }}
+              >
+                ▶
+              </button>
+            )}
 
             {typeTags && typeTags.length > 0 && (
               <div style={{ position: "relative" }}>
