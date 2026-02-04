@@ -92,13 +92,21 @@ export function BrowseFilterClient({ channels }: BrowseFilterClientProps) {
 
   const [filtersCollapsed, setFiltersCollapsed] = useState(false);
 
+  // Local filter state, initialized from the URL but decoupled from it.
+  const [localFilters, setLocalFilters] = useState<FilterState>(() => parseFiltersFromSearchParams(params));
+
   useEffect(() => {
     if (typeof window === "undefined") return;
     const mq = window.matchMedia("(max-width: 768px)");
     setFiltersCollapsed(mq.matches);
   }, []);
 
-  const filters = useMemo(() => parseFiltersFromSearchParams(params), [params]);
+  // When URL params change externally (e.g., via back/forward), sync local filters.
+  useEffect(() => {
+    setLocalFilters(parseFiltersFromSearchParams(params));
+  }, [params]);
+
+  const filters = localFilters;
 
   const channelsParam = params.get("channels") || "";
   const selectedChannelIds = channelsParam
@@ -291,7 +299,26 @@ export function BrowseFilterClient({ channels }: BrowseFilterClientProps) {
           </div>
 
           {/* Shared duration + trigger + talking style + roleplay scene + language */}
-          <FilterPanel state={filters} onChange={updateSearchParams} />
+          <FilterPanel state={filters} onChange={setLocalFilters} />
+
+          {/* Apply button: sync local filters to URL and trigger new fetch */}
+          <div style={{ marginTop: "0.75rem", display: "flex", justifyContent: "flex-end" }}>
+            <button
+              type="button"
+              onClick={() => updateSearchParams(localFilters)}
+              style={{
+                borderRadius: "999px",
+                border: "1px solid #4b5563",
+                background: "#020617",
+                color: "#e5e7eb",
+                padding: "0.35rem 0.9rem",
+                fontSize: "0.75rem",
+                cursor: "pointer",
+              }}
+            >
+              Apply filters
+            </button>
+          </div>
         </>
       )}
     </div>
