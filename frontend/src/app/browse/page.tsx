@@ -44,6 +44,7 @@ async function fetchVideos(
     channels?: string[];
     language?: string | null;
     sort?: string | null;
+    exclude?: string[];
   }
 ): Promise<BrowseResponse | null> {
   if (!backendUrl) return null;
@@ -65,6 +66,9 @@ async function fetchVideos(
   }
   if (options?.sort) {
     params.set("sort", options.sort);
+  }
+  if (options?.exclude && options.exclude.length > 0) {
+    params.set("exclude", options.exclude.join(","));
   }
 
   const res = await fetch(`${backendUrl}/videos?${params.toString()}`, {
