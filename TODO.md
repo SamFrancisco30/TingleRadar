@@ -37,6 +37,14 @@
 - [x] Make inline player opt-in via explicit `▶` control, not whole-card click.
 - [ ] Revisit font sizes / spacing on small screens once more filters are visible.
 
+## 7. Weekly Rankings: API & Performance
+- [x] Change backend `fetch_weekly_rankings` to return only the latest weekly list (keep older ones in DB for history).
+- [x] Update frontend `HomePage` + `RankingExplorer` to only display the latest week (drop week selector UI).
+- [x] Switch Weekly page fetch to ISR (`next: { revalidate: 300 }`) instead of `cache: "no-store"`.
+- [ ] Confirm ingestion/cron uses `--top 100` (or equivalent) for weekly rankings so each board has 100 entries instead of 60.
+- [ ] Add a lightweight loading or transition affordance when navigating between `Weekly` and `Browse` (e.g., subtle skeleton or shimmer) so it never feels like the nav click was ignored.
+- [ ] Consider a separate internal/analytics path for exploring older weekly lists in the future (no front-page exposure).
+
 ---
 
 This file is intentionally high-level. As tasks are implemented, check them off and, if needed, break them down into more granular TODOs in dedicated files (e.g., `TODO_FILTER_REFACTOR.md`, `backend/TODO.md`, `frontend/TODO.md`).
