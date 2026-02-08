@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import { InlinePlayer } from "../../components/InlinePlayer";
 import { InlinePlaylistControls } from "../../components/InlinePlaylistControls";
 import { VideoCard } from "../../components/VideoCard";
-import { displayTag, languageLabels } from "../../components/FilterPanel";
 import type { ApiVideo } from "./page";
 import { normalizeVideo } from "../../lib/videoModel";
 
@@ -81,8 +80,8 @@ export function BrowsePlayerClient({ items }: BrowsePlayerClientProps) {
               likeCount={video.likeCount}
               durationSeconds={video.durationSeconds}
               publishedAt={video.publishedAt}
-              typeTags={video.typeTags.map((tag) => displayTag(tag))}
-              languageLabel={languageLabels[video.language] || "English"}
+              typeTags={video.typeTags}
+              languageLabel={video.language}
               extraChips={[]}
               active={isActive}
               onPlayClick={() => handleCardClick(index)}

@@ -6,8 +6,6 @@ import {
   FilterPanel,
   FilterState,
   durationBuckets,
-  languageLabels,
-  displayTag,
 } from "./FilterPanel";
 import { FilterHeader } from "./FilterHeader";
 import { detectLanguage, detectTypeTags, type BasicVideoFromApi } from "../lib/videoModel";
@@ -554,8 +552,8 @@ export function RankingExplorer({ ranking }: { ranking: RankingList }) {
                   durationSeconds={item.video.duration}
                   publishedAt={item.video.published_at}
                   rank={item.rank}
-                  typeTags={item.type_tags.map((tag: string) => displayTag(tag))}
-                  languageLabel={languageLabels[item.language] || "English"}
+                  typeTags={item.type_tags}
+                  languageLabel={item.language}
                   extraChips={[]}
                   active={isActive}
                   onPlayClick={() => {

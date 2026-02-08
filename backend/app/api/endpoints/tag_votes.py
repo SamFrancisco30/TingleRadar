@@ -32,6 +32,11 @@ ALLOWED_TAGS = {
     "rp_haircut",
     "rp_cranial",
     "rp_dentist",
+    # Language codes are also allowed so users can downvote language classification.
+    "en",
+    "ja",
+    "ko",
+    "zh",
 }
 
 

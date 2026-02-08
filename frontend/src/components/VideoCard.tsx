@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { displayTag, languageLabels } from "./FilterPanel";
 
 export type VideoCardProps = {
   youtubeId: string;
@@ -111,10 +112,9 @@ export const VideoCard: React.FC<VideoCardProps> = ({
     }
   };
 
-  const sendTagVote = async (tagLabel: string, vote: 1 | -1) => {
+  const sendTagVote = async (tagId: string, vote: 1 | -1) => {
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
     if (!backendUrl) return;
-    const tagId = tagLabel; // TODO: 将来这里可以从 display 文案映射回内部 tag id
     try {
       await fetch(`${backendUrl}/videos/${youtubeId}/tags/${encodeURIComponent(tagId)}/vote`, {
         method: "POST",
@@ -228,16 +228,16 @@ export const VideoCard: React.FC<VideoCardProps> = ({
               position: "relative",
             }}
           >
-            {typeTags?.map((tag) => {
-              const selected = editTagsMode && selectedTags.has(tag);
+            {typeTags?.map((tagId) => {
+              const selected = editTagsMode && selectedTags.has(tagId);
               return (
                 <button
                   type="button"
-                  key={tag}
+                  key={tagId}
                   onClick={(e) => {
                     if (!editTagsMode) return;
                     e.stopPropagation();
-                    toggleTagSelection(tag);
+                    toggleTagSelection(tagId);
                   }}
                   style={{
                     fontSize: "0.65rem",
@@ -250,7 +250,7 @@ export const VideoCard: React.FC<VideoCardProps> = ({
                     cursor: editTagsMode ? "pointer" : "default",
                   }}
                 >
-                  {tag}
+                  {displayTag(tagId)}
                 </button>
               );
             })}
@@ -273,7 +273,7 @@ export const VideoCard: React.FC<VideoCardProps> = ({
                   cursor: editTagsMode ? "pointer" : "default",
                 }}
               >
-                {languageLabel}
+                {languageLabels[languageLabel] || languageLabel}
               </button>
             )}
             {extraChips?.map((chip) => (
