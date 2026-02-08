@@ -4,19 +4,21 @@ import { useMemo, useState } from "react";
 import { InlinePlayer } from "../../components/InlinePlayer";
 import { InlinePlaylistControls } from "../../components/InlinePlaylistControls";
 import { VideoCard } from "../../components/VideoCard";
-import { displayTag } from "../../components/FilterPanel";
+import { displayTag, languageLabels } from "../../components/FilterPanel";
 import type { ApiVideo } from "./page";
+import { normalizeVideo } from "../../lib/videoModel";
 
 export type BrowsePlayerClientProps = {
   items: ApiVideo[];
 };
 
 export function BrowsePlayerClient({ items }: BrowsePlayerClientProps) {
-  const videoIds = useMemo(() => items.map((v) => v.youtube_id), [items]);
+  const normalizedItems = useMemo(() => items.map((v) => normalizeVideo(v)), [items]);
+  const videoIds = useMemo(() => normalizedItems.map((v) => v.youtubeId), [normalizedItems]);
   const [showInlinePlayer, setShowInlinePlayer] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  const size = videoIds.length;
+  const size = normalizedItems.length;
 
   const handleToggle = () => {
     if (!size) return;
@@ -63,23 +65,25 @@ export function BrowsePlayerClient({ items }: BrowsePlayerClientProps) {
       )}
 
       <div style={{ marginTop: "0.75rem" }}>
-        {items.map((video, index) => {
+        {normalizedItems.map((video, index) => {
           const isActive =
             showInlinePlayer &&
             size > 0 &&
-            video.youtube_id === videoIds[currentIndex];
+            video.youtubeId === videoIds[currentIndex];
           return (
             <VideoCard
-              key={video.youtube_id}
-              youtubeId={video.youtube_id}
+              key={video.youtubeId}
+              youtubeId={video.youtubeId}
               title={video.title}
-              channelTitle={video.channel_title}
-              thumbnailUrl={video.thumbnail_url}
-              viewCount={video.view_count}
-              likeCount={video.like_count}
-              durationSeconds={video.duration}
-              publishedAt={video.published_at}
-              extraChips={video.computed_tags?.map((tag) => displayTag(tag))}
+              channelTitle={video.channelTitle}
+              thumbnailUrl={video.thumbnailUrl}
+              viewCount={video.viewCount}
+              likeCount={video.likeCount}
+              durationSeconds={video.durationSeconds}
+              publishedAt={video.publishedAt}
+              typeTags={video.typeTags.map((tag) => displayTag(tag))}
+              languageLabel={languageLabels[video.language] || "English"}
+              extraChips={[]}
               active={isActive}
               onPlayClick={() => handleCardClick(index)}
             />
