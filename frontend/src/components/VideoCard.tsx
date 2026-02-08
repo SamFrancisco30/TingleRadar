@@ -255,17 +255,26 @@ export const VideoCard: React.FC<VideoCardProps> = ({
               );
             })}
             {languageLabel && (
-              <span
+              <button
+                type="button"
+                onClick={(e) => {
+                  if (!editTagsMode) return;
+                  e.stopPropagation();
+                  toggleTagSelection(languageLabel);
+                }}
                 style={{
                   fontSize: "0.65rem",
                   borderRadius: "999px",
-                  border: "1px solid #475569",
+                  border: "1px solid",
+                  borderColor: editTagsMode && selectedTags.has(languageLabel) ? "#b91c1c" : "#475569",
                   padding: "0.2rem 0.6rem",
-                  color: "#cbd5f5",
+                  color: editTagsMode && selectedTags.has(languageLabel) ? "#fecaca" : "#cbd5f5",
+                  background: editTagsMode && selectedTags.has(languageLabel) ? "#450a0a" : "transparent",
+                  cursor: editTagsMode ? "pointer" : "default",
                 }}
               >
                 {languageLabel}
-              </span>
+              </button>
             )}
             {extraChips?.map((chip) => (
               <span
