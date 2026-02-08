@@ -403,7 +403,7 @@ export const VideoCard: React.FC<VideoCardProps> = ({
                         cursor: "pointer",
                       }}
                     >
-                      Tag feedback
+                      Downvote tags
                     </button>
                   </div>
                 )}
