@@ -27,5 +27,6 @@ class Video(Base):
     like_count = Column(Integer, default=0, nullable=False)
     duration = Column(Integer, nullable=True)
     tags = Column(JSON, nullable=True)
+    computed_tags = Column(JSON, nullable=True)
     thumbnail_url = Column(String(1024), nullable=True)
     is_active = Column(Boolean, default=True, nullable=False)

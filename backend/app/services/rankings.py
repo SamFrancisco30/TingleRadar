@@ -50,7 +50,15 @@ def _build_ranking_payload(db: Session, ranking: RankingListModel) -> RankingLis
 
         video_payload = VideoBase.from_orm(video)
         # Attach computed tags so the frontend can filter by trigger/roleplay/etc.
-        auto_tags = compute_tags_for_video(video)
+        # Prefer persisted computed_tags when available; otherwise compute once
+        # and persist back to the Video row so subsequent requests reuse it.
+        if video.computed_tags:
+            auto_tags = list(video.computed_tags)
+        else:
+            auto_tags = compute_tags_for_video(video)
+            video.computed_tags = auto_tags
+            db.add(video)
+
         vote_scores = get_tag_vote_scores(db, video.youtube_id)
 
         # Apply simple vote-based adjustments: heavily downvoted auto tags are

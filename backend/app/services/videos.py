@@ -100,7 +100,17 @@ def browse_videos(
     filtered: List[VideoBase] = []
     for video in rows:
         payload = VideoBase.from_orm(video)
-        payload.computed_tags = compute_tags_for_video(video)
+
+        # Prefer persisted computed_tags when available; otherwise compute once
+        # and persist back to the Video row so subsequent requests reuse it.
+        if video.computed_tags:
+            auto_tags = list(video.computed_tags)
+        else:
+            auto_tags = compute_tags_for_video(video)
+            video.computed_tags = auto_tags
+            db.add(video)
+
+        payload.computed_tags = auto_tags
 
         # Optional language filter using the same heuristic as the frontend
         # (RankingExplorer) so that classification stays consistent.
