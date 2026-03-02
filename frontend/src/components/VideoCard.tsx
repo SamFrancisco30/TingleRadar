@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { displayTag, languageLabels } from "./FilterPanel";
+import { languageLabels } from "./FilterPanel";
+import { describeTag } from "./tagCatalog";
 
 export type VideoCardProps = {
   youtubeId: string;
@@ -96,6 +97,7 @@ export const VideoCard: React.FC<VideoCardProps> = ({
   const [menuOpen, setMenuOpen] = useState(false);
   const [editTagsMode, setEditTagsMode] = useState(false);
   const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
+  const [tagEditMode, setTagEditMode] = useState<"downvote" | "add" | null>(null);
 
   const getFingerprint = (): string => {
     if (typeof window === "undefined") return "anonymous";
@@ -143,10 +145,17 @@ export const VideoCard: React.FC<VideoCardProps> = ({
 
   const handleDoneEditing = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    // 对所有选中 tag 批量 downvote
-    await Promise.all(Array.from(selectedTags).map((tag) => sendTagVote(tag, -1)));
+    if (!tagEditMode || selectedTags.size === 0) {
+      setSelectedTags(new Set());
+      setEditTagsMode(false);
+      setTagEditMode(null);
+      return;
+    }
+    const voteValue: 1 | -1 = tagEditMode === "downvote" ? -1 : 1;
+    await Promise.all(Array.from(selectedTags).map((tag) => sendTagVote(tag, voteValue)));
     setSelectedTags(new Set());
     setEditTagsMode(false);
+    setTagEditMode(null);
   };
 
   return (
@@ -250,7 +259,7 @@ export const VideoCard: React.FC<VideoCardProps> = ({
                     cursor: editTagsMode ? "pointer" : "default",
                   }}
                 >
-                  {displayTag(tagId)}
+                  {describeTag(tagId).label}
                 </button>
               );
             })}
@@ -330,7 +339,7 @@ export const VideoCard: React.FC<VideoCardProps> = ({
               </button>
             )}
 
-            {typeTags && typeTags.length > 0 && (
+            {(typeTags && typeTags.length > 0) && (
               <div style={{ position: "relative" }}>
                 {!editTagsMode ? (
                   <button
@@ -380,7 +389,7 @@ export const VideoCard: React.FC<VideoCardProps> = ({
                       background: "#020617",
                       boxShadow: "0 10px 20px rgba(0,0,0,0.6)",
                       padding: "0.25rem 0.4rem",
-                      minWidth: "140px",
+                      minWidth: "160px",
                       zIndex: 10,
                     }}
                   >
@@ -390,6 +399,29 @@ export const VideoCard: React.FC<VideoCardProps> = ({
                         e.stopPropagation();
                         setMenuOpen(false);
                         setEditTagsMode(true);
+                        setTagEditMode("add");
+                        setSelectedTags(new Set());
+                      }}
+                      style={{
+                        width: "100%",
+                        textAlign: "left",
+                        border: "none",
+                        background: "transparent",
+                        color: "#e5e7eb",
+                        fontSize: "0.75rem",
+                        padding: "0.2rem 0.1rem",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Add tags
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setMenuOpen(false);
+                        setEditTagsMode(true);
+                        setTagEditMode("downvote");
                         setSelectedTags(new Set());
                       }}
                       style={{
