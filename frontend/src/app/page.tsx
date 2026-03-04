@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { RankingExplorer } from "../components/RankingExplorer";
+import { resolveBackendApiBase } from "../lib/backendApi";
 
 type RankingItem = {
   rank: number;
@@ -32,12 +33,7 @@ export const metadata: Metadata = {
     "Weekly ASMR leaderboard built for whisper, no-talking, and immersive roleplay content.",
 };
 
-const env = process.env.NEXT_PUBLIC_TINGLE_ENV ?? "product";
-
-const backendUrl =
-  env === "test"
-    ? process.env.NEXT_PUBLIC_BACKEND_URL_TEST ?? "http://localhost:8000"
-    : process.env.NEXT_PUBLIC_BACKEND_URL;
+const backendUrl = resolveBackendApiBase();
 
 type ApiRankingItem = {
   rank: number;
@@ -158,3 +154,4 @@ export default async function HomePage() {
     </div>
   );
 }
+

@@ -9,6 +9,7 @@ import {
 } from "./FilterPanel";
 import { FilterHeader } from "./FilterHeader";
 import { detectLanguage, detectTypeTags, type BasicVideoFromApi } from "../lib/videoModel";
+import { resolveBackendApiBase } from "../lib/backendApi";
 
 type RankingItem = {
   rank: number;
@@ -263,11 +264,7 @@ export function RankingExplorer({ ranking }: { ranking: RankingList }) {
     }
   };
 
-  const env = process.env.NEXT_PUBLIC_TINGLE_ENV ?? "product";
-  const API_BASE =
-    env === "test"
-      ? process.env.NEXT_PUBLIC_BACKEND_URL_TEST ?? "http://localhost:8000"
-      : process.env.NEXT_PUBLIC_BACKEND_URL || "";
+  const API_BASE = resolveBackendApiBase();
 
   const handlePushToYouTube = async () => {
     if (!playlistRows.length) {
@@ -571,3 +568,4 @@ export function RankingExplorer({ ranking }: { ranking: RankingList }) {
     </div>
   );
 }
+

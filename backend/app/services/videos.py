@@ -98,6 +98,7 @@ def browse_videos(
     tag_set = set(tags or [])
     exclude_set = set(exclude_tags or [])
     filtered: List[VideoBase] = []
+    computed_tags_updated = False
     for video in rows:
         payload = VideoBase.from_orm(video)
 
@@ -109,6 +110,7 @@ def browse_videos(
             auto_tags = compute_tags_for_video(video)
             video.computed_tags = auto_tags
             db.add(video)
+            computed_tags_updated = True
 
         payload.computed_tags = auto_tags
 
@@ -129,9 +131,13 @@ def browse_videos(
                 continue
         filtered.append(payload)
 
+    if computed_tags_updated:
+        db.commit()
+
     total = len(filtered)
     start = (page - 1) * page_size
     end = start + page_size
     items = filtered[start:end]
 
     return items, total
+

@@ -12,7 +12,9 @@ class Settings(BaseSettings):
     youtube_client_id: Optional[str] = None
     youtube_client_secret: Optional[str] = None
     youtube_oauth_redirect: Optional[str] = None
+    frontend_cors_origins: Optional[str] = None
 
     class Config:
         env_file = Path(__file__).resolve().parents[2] / ".env"
         env_file_encoding = "utf-8"
+

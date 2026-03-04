@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { resolveBackendApiBase } from "../../../../../lib/backendApi";
 
-const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || "";
+const API_BASE = resolveBackendApiBase();
 
 export async function GET(req: NextRequest) {
   if (!API_BASE) {
@@ -45,3 +46,4 @@ export async function GET(req: NextRequest) {
     );
   }
 }
+

@@ -3,8 +3,9 @@ import type { Metadata } from "next";
 import { fetchPopularChannels, type ChannelSummary } from "./channels";
 import { BrowseFilterClient } from "./BrowseFilterClient";
 import { BrowsePlayerClient } from "./BrowsePlayerClient";
+import { resolveBackendApiBase } from "../../lib/backendApi";
 
-const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+const backendUrl = resolveBackendApiBase();
 
 export const metadata: Metadata = {
   title: "Browse all ASMR videos — TingleRadar",
@@ -314,3 +315,4 @@ export default async function BrowsePage({
     </div>
   );
 }
+

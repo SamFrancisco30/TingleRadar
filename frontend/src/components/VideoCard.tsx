@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { languageLabels } from "./FilterPanel";
 import { describeTag } from "./tagCatalog";
+import { resolveBackendApiBase } from "../lib/backendApi";
 
 export type VideoCardProps = {
   youtubeId: string;
@@ -115,7 +116,7 @@ export const VideoCard: React.FC<VideoCardProps> = ({
   };
 
   const sendTagVote = async (tagId: string, vote: 1 | -1) => {
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+    const backendUrl = resolveBackendApiBase();
     if (!backendUrl) return;
     try {
       await fetch(`${backendUrl}/videos/${youtubeId}/tags/${encodeURIComponent(tagId)}/vote`, {
@@ -447,3 +448,4 @@ export const VideoCard: React.FC<VideoCardProps> = ({
     </Wrapper>
   );
 };
+

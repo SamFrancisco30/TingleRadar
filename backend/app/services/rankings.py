@@ -43,6 +43,7 @@ def _build_ranking_payload(db: Session, ranking: RankingListModel) -> RankingLis
         .all()
     )
     ranking_items = []
+    computed_tags_updated = False
     for item in items_query:
         video = db.query(VideoModel).filter(VideoModel.youtube_id == item.video_id).first()
         if not video:
@@ -58,6 +59,7 @@ def _build_ranking_payload(db: Session, ranking: RankingListModel) -> RankingLis
             auto_tags = compute_tags_for_video(video)
             video.computed_tags = auto_tags
             db.add(video)
+            computed_tags_updated = True
 
         vote_scores = get_tag_vote_scores(db, video.youtube_id)
 
@@ -79,6 +81,9 @@ def _build_ranking_payload(db: Session, ranking: RankingListModel) -> RankingLis
                 video=video_payload,
             )
         )
+
+    if computed_tags_updated:
+        db.commit()
 
     label_date = _extract_label_date(ranking.name, ranking.created_at)
 
@@ -109,3 +114,4 @@ def fetch_weekly_rankings(db: Session) -> List[RankingList]:
         return []
 
     return [_build_ranking_payload(db, latest)]
+

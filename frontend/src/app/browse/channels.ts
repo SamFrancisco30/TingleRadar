@@ -1,4 +1,6 @@
-const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+import { resolveBackendApiBase } from "../../lib/backendApi";
+
+const backendUrl = resolveBackendApiBase();
 
 export type ChannelSummary = {
   channel_id: string;
@@ -20,3 +22,4 @@ export async function fetchPopularChannels(): Promise<ChannelSummary[]> {
   const data = (await res.json()) as ChannelSummary[];
   return data;
 }
+
