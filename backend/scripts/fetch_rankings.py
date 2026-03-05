@@ -2,16 +2,14 @@
 
 import argparse
 import logging
+import os
 from collections import OrderedDict
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Iterable, List, NamedTuple, Optional
 
 import requests
+from dotenv import load_dotenv
 from isodate import parse_duration
-
-from app.core.config import Settings
-from app.db.session import SessionLocal
-from app.models import RankingItem, RankingList, Video
 
 
 YOUTUBE_SEARCH_URL = "https://www.googleapis.com/youtube/v3/search"
@@ -44,6 +42,85 @@ class RankingPayload(NamedTuple):
     queries: List[str]
 
 
+class SupabaseRestClient:
+    def __init__(self, supabase_url: str, service_role_key: str) -> None:
+        self.base_url = f"{supabase_url.rstrip('/')}/rest/v1"
+        self.headers = {
+            "apikey": service_role_key,
+            "Authorization": f"Bearer {service_role_key}",
+            "Content-Type": "application/json",
+        }
+
+    def _request(
+        self,
+        method: str,
+        path: str,
+        *,
+        params: Optional[Dict[str, Any]] = None,
+        json_payload: Optional[Any] = None,
+        prefer: Optional[str] = None,
+    ) -> Any:
+        headers = dict(self.headers)
+        if prefer:
+            headers["Prefer"] = prefer
+
+        response = requests.request(
+            method,
+            f"{self.base_url}/{path.lstrip('/')}",
+            params=params,
+            json=json_payload,
+            headers=headers,
+            timeout=20,
+        )
+        if not response.ok:
+            raise RuntimeError(
+                f"Supabase REST {method} {path} failed: {response.status_code} {response.text}"
+            )
+
+        if not response.text:
+            return None
+        try:
+            return response.json()
+        except ValueError:
+            return response.text
+
+    def upsert_videos(self, videos: List[Dict[str, Any]]) -> None:
+        if not videos:
+            return
+
+        batch_size = 200
+        for i in range(0, len(videos), batch_size):
+            batch = videos[i : i + batch_size]
+            self._request(
+                "POST",
+                "videos",
+                params={"on_conflict": "youtube_id"},
+                json_payload=batch,
+                prefer="resolution=merge-duplicates,return=minimal",
+            )
+
+    def insert_ranking_list(self, name: str, description: str) -> int:
+        rows = self._request(
+            "POST",
+            "ranking_lists",
+            json_payload=[{"name": name, "description": description}],
+            prefer="return=representation",
+        )
+        if not rows or not isinstance(rows, list) or "id" not in rows[0]:
+            raise RuntimeError("Failed to insert ranking list or read generated id")
+        return int(rows[0]["id"])
+
+    def insert_ranking_items(self, items: List[Dict[str, Any]]) -> None:
+        if not items:
+            return
+        self._request(
+            "POST",
+            "ranking_items",
+            json_payload=items,
+            prefer="return=minimal",
+        )
+
+
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Generate an ASMR ranking list and store it in Supabase."
@@ -70,7 +147,7 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument(
         "--name",
         default=None,
-        help="Optional list name—defaults to a weekly label.",
+        help="Optional list name; defaults to a weekly label.",
     )
     parser.add_argument(
         "--description",
@@ -80,7 +157,7 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument(
         "--dry-run",
         action="store_true",
-        help="Build the list but don't commit it to the database.",
+        help="Build the list but do not write to Supabase.",
     )
     parser.add_argument(
         "--api-key",
@@ -93,7 +170,7 @@ def parse_arguments() -> argparse.Namespace:
         default=0,
         help=(
             "Shift the 7-day window back by N days. "
-            "For example, --days-offset 7 approximates the previous week's rankings."
+            "For example, --days-offset 7 approximates the previous week."
         ),
     )
     return parser.parse_args()
@@ -179,11 +256,6 @@ def parse_duration_seconds(value: Optional[str]) -> Optional[int]:
         return None
 
 
-def get_published_after_iso() -> str:
-    threshold = datetime.now(timezone.utc) - timedelta(days=RECENT_DAYS)
-    return threshold.strftime("%Y-%m-%dT%H:%M:%SZ")
-
-
 def normalize_video_payload(detail: Dict[str, Any]) -> Dict[str, Any]:
     snippet = detail.get("snippet", {})
     stats = detail.get("statistics", {})
@@ -196,11 +268,7 @@ def normalize_video_payload(detail: Dict[str, Any]) -> Dict[str, Any]:
             break
 
     published_raw = snippet.get("publishedAt")
-    published_at = (
-        parse_published_at(published_raw)
-        if published_raw
-        else datetime.now(timezone.utc)
-    )
+    published_at = parse_published_at(published_raw) if published_raw else datetime.now(timezone.utc)
 
     return {
         "youtube_id": detail.get("id"),
@@ -230,8 +298,16 @@ def is_long_video(video_payload: Dict[str, Any]) -> bool:
     return duration is not None and duration >= 120
 
 
+def _serialize_video(video_payload: Dict[str, Any]) -> Dict[str, Any]:
+    row = dict(video_payload)
+    published_at = row.get("published_at")
+    if isinstance(published_at, datetime):
+        row["published_at"] = published_at.isoformat()
+    return row
+
+
 def persist_ranking(
-    session,
+    supabase_client: SupabaseRestClient,
     payload: RankingPayload,
     list_name: str,
     description: str,
@@ -246,94 +322,93 @@ def persist_ranking(
     recent_candidates = []
     for item in filtered:
         video_payload = normalize_video_payload(item)
-        if (
-            video_payload["published_at"] >= recent_threshold
-            and is_long_video(video_payload)
-        ):
+        if video_payload["published_at"] >= recent_threshold and is_long_video(video_payload):
             recent_candidates.append(video_payload)
 
     truncated = recent_candidates[:top_n]
 
     if not truncated:
-        logger.warning("No recent items survived filtering—nothing to persist.")
+        logger.warning("No recent items survived filtering, nothing to persist.")
         return
 
     preview_count = min(5, len(truncated))
-    logger.info("Top %s preview (title · channel · views):", preview_count)
-    for idx, payload in enumerate(truncated[:preview_count], start=1):
+    logger.info("Top %s preview (title | channel | views):", preview_count)
+    for idx, preview_payload in enumerate(truncated[:preview_count], start=1):
         logger.info(
-            "#%s %s · %s · %s views",
+            "#%s %s | %s | %s views",
             idx,
-            payload["title"],
-            payload["channel_title"],
-            payload["view_count"],
-        )
-
-    ranking = RankingList(name=list_name, description=description)
-    session.add(ranking)
-    session.flush()
-
-    for idx, video_payload in enumerate(truncated, start=1):
-        session.merge(Video(**video_payload))
-        session.flush()
-        session.add(
-            RankingItem(
-                ranking_list_id=ranking.id,
-                video_id=video_payload["youtube_id"],
-                position=idx,
-                score=video_payload["view_count"],
-            )
+            preview_payload["title"],
+            preview_payload["channel_title"],
+            preview_payload["view_count"],
         )
 
     if dry_run:
-        session.rollback()
-        logger.info("Dry run enabled—rolled back transaction.")
-    else:
-        session.commit()
-        logger.info("Persisted ranking list %s with %s entries", list_name, len(truncated))
+        logger.info("Dry run enabled, skipping Supabase writes.")
+        return
+
+    serialized_videos = [_serialize_video(v) for v in truncated]
+    supabase_client.upsert_videos(serialized_videos)
+    ranking_list_id = supabase_client.insert_ranking_list(list_name, description)
+
+    ranking_items = [
+        {
+            "ranking_list_id": ranking_list_id,
+            "video_id": video_payload["youtube_id"],
+            "position": idx,
+            "score": video_payload["view_count"],
+        }
+        for idx, video_payload in enumerate(truncated, start=1)
+    ]
+    supabase_client.insert_ranking_items(ranking_items)
+
+    logger.info("Persisted ranking list %s with %s entries", list_name, len(truncated))
 
 
 def main() -> None:
+    load_dotenv()
     args = parse_arguments()
-    settings = Settings()
-    api_key = args.api_key or settings.youtube_api_key
-    if not api_key:
-        raise RuntimeError("YouTube API key is required—set YOUTUBE_API_KEY in the .env file")
 
-    session = SessionLocal()
-    # Allow shifting the 7-day lookback window backwards in time so we can
-    # regenerate "previous week" rankings by passing --days-offset N.
+    api_key = args.api_key or os.getenv("YOUTUBE_API_KEY")
+    supabase_url = os.getenv("SUPABASE_URL")
+    service_role_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+
+    if not api_key:
+        raise RuntimeError("YouTube API key is required. Set YOUTUBE_API_KEY.")
+    if not supabase_url:
+        raise RuntimeError("SUPABASE_URL is required for Supabase REST writes.")
+    if not service_role_key:
+        raise RuntimeError("SUPABASE_SERVICE_ROLE_KEY is required for Supabase REST writes.")
+
+    supabase_client = SupabaseRestClient(supabase_url, service_role_key)
+
     anchor = datetime.now(timezone.utc) - timedelta(days=args.days_offset)
     recent_threshold = anchor - timedelta(days=RECENT_DAYS)
     published_after = recent_threshold.strftime("%Y-%m-%dT%H:%M:%SZ")
-    try:
-        aggregated: "OrderedDict[str, None]" = OrderedDict()
-        for query in args.queries:
-            for video_id in fetch_search_ids(api_key, query, args.per_query, published_after):
-                aggregated.setdefault(video_id, None)
 
-        payload = RankingPayload(
-            items=fetch_video_details(api_key, list(aggregated.keys())),
-            generated_at=datetime.now(timezone.utc),
-            queries=args.queries,
-        )
-        # By default, label the list by the anchor date so shifted runs
-        # (via --days-offset) get a meaningful weekly stamp.
-        default_label_date = anchor.date()
-        list_name = args.name or f"ASMR Weekly Pulse {default_label_date:%Y-%m-%d}"
-        # Default to an empty description so we don't surface internal query strings in the UI.
-        description = args.description or ""
-        persist_ranking(
-            session,
-            payload,
-            list_name,
-            description,
-            args.top,
-            args.dry_run,
-            recent_threshold,
-        )
-    finally:
-        session.close()
+    aggregated: "OrderedDict[str, None]" = OrderedDict()
+    for query in args.queries:
+        for video_id in fetch_search_ids(api_key, query, args.per_query, published_after):
+            aggregated.setdefault(video_id, None)
+
+    payload = RankingPayload(
+        items=fetch_video_details(api_key, list(aggregated.keys())),
+        generated_at=datetime.now(timezone.utc),
+        queries=args.queries,
+    )
+
+    default_label_date = anchor.date()
+    list_name = args.name or f"ASMR Weekly Pulse {default_label_date:%Y-%m-%d}"
+    description = args.description or ""
+
+    persist_ranking(
+        supabase_client,
+        payload,
+        list_name,
+        description,
+        args.top,
+        args.dry_run,
+        recent_threshold,
+    )
 
 
 if __name__ == "__main__":

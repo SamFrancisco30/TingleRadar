@@ -1,4 +1,3 @@
-
 # CI
 
 - Vercel: auto-deploys from main.
@@ -12,7 +11,7 @@ A scheduled worker is configured at `.github/workflows/weekly-rankings.yml`.
 
 Required GitHub repository secrets:
 
-- `DATABASE_URL`
+- `SUPABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `YOUTUBE_API_KEY`
 

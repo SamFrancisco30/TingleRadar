@@ -5,6 +5,7 @@
 1. Create a `.env` file (not tracked) with:
    ```
    DATABASE_URL=postgresql://postgres.ttejnvtklcmbgnetciej:<password>@aws-1-ca-central-1.pooler.supabase.com:5432/postgres
+   SUPABASE_URL=https://<project-ref>.supabase.co
    SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
    YOUTUBE_API_KEY=<youtube-data-api-key>
    YOUTUBE_CLIENT_ID=<youtube-oauth-client-id>
@@ -41,7 +42,7 @@ The file `backend/scripts/fetch_rankings.py` is the entry point for the weekly Y
 - Reads the YouTube Data API key from `YOUTUBE_API_KEY` (fall back option: pass `--api-key`).
 - Runs multiple search queries (`--queries`) limited to the last `RECENT_DAYS` (default 7) and excludes any video shorter than two minutes, so the ranking focuses on recent, fuller ASMR uploads; future playlist columns can relax those constraints if you want to highlight shorts or archive hits.
 - Normalizes each video by title/tag/channel, filters out noisy keywords (mukbang, magnetic ball, etc.), deduplicates, and stores both raw video metadata + the generated ranking list. Score is still recorded as the view count for historical continuity, but the front-end now displays raw Views/Likes, so you don’t need to interpret a separate score value.
-- Writes to Supabase via the same SQLAlchemy models (videos, ranking_lists, ranking_items) so the frontend can see fresh data.
+- Writes to Supabase via REST (`SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`) into `videos`, `ranking_lists`, and `ranking_items`, so the frontend can see fresh data.
 
 Run it with something like:
 
@@ -57,4 +58,8 @@ Remove `--dry-run` when you want to actually commit a new list. You can override
 - After the callback completes (`/api/auth/youtube/callback`), the refresh token and playlist ID are stored in the `youtube_credentials`/`youtube_playlists` tables, so future pushes skip reauthorization.
 - The frontend calls `GET /api/youtube/status` to know if authorization exists, and posts `title`, `description`, and `video_ids` to `POST /playlists/weekly/sync` to rebuild the playlist on YouTube.
 - The playlist sync endpoint refreshes the stored credentials, clears existing items, and writes the new batch of videos (private playlist by default).
+
+
+
+
 
