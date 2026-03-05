@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 
 
 class VideoBase(BaseModel):
@@ -19,9 +19,17 @@ class VideoBase(BaseModel):
     # Computed tags derived from title/description/tags on the backend.
     computed_tags: List[str] = Field(default_factory=list)
 
+    @validator("tags", "computed_tags", pre=True, always=True)
+    def default_empty_list(cls, value):
+        if value is None:
+            return []
+        return value
+
     class Config:
         orm_mode = True
 
 
 class VideoDetail(VideoBase):
     additional_metadata: Optional[Dict[str, Any]] = None
+
+
