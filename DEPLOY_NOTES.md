@@ -19,5 +19,5 @@ The worker runs:
 
 ```bash
 cd backend
-PYTHONPATH=. python -m scripts.fetch_rankings --top 100 --per-query 20
+PYTHONPATH=. python -m scripts.fetch_rankings --top 60 --per-query 40
 ```

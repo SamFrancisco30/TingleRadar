@@ -22,6 +22,10 @@ DEFAULT_QUERIES = [
     "ASMR ear to ear",
 ]
 RECENT_DAYS = 7
+FALLBACK_DAYS = 14
+STRICT_MIN_DURATION_SECONDS = 120
+RELAXED_MIN_DURATION_SECONDS = 60
+MIN_WEEKLY_RESULTS = 60
 BLACKLIST_KEYWORDS = [
     "mukbang",
     "magnetic ball",
@@ -295,7 +299,12 @@ def extract_view_count(detail: Dict[str, Any]) -> int:
 
 def is_long_video(video_payload: Dict[str, Any]) -> bool:
     duration = video_payload.get("duration")
-    return duration is not None and duration >= 120
+    return duration is not None and duration >= STRICT_MIN_DURATION_SECONDS
+
+
+def has_min_duration(video_payload: Dict[str, Any], min_seconds: int) -> bool:
+    duration = video_payload.get("duration")
+    return duration is not None and duration >= min_seconds
 
 
 def _serialize_video(video_payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -304,6 +313,26 @@ def _serialize_video(video_payload: Dict[str, Any]) -> Dict[str, Any]:
     if isinstance(published_at, datetime):
         row["published_at"] = published_at.isoformat()
     return row
+
+
+def _extend_unique_videos(
+    selected: List[Dict[str, Any]],
+    candidates: List[Dict[str, Any]],
+    predicate,
+    limit: int,
+) -> int:
+    existing_ids = {video["youtube_id"] for video in selected}
+    added = 0
+    for video in candidates:
+        if len(selected) >= limit:
+            break
+        video_id = video["youtube_id"]
+        if video_id in existing_ids or not predicate(video):
+            continue
+        selected.append(video)
+        existing_ids.add(video_id)
+        added += 1
+    return added
 
 
 def persist_ranking(
@@ -318,18 +347,64 @@ def persist_ranking(
     logger.info("Building ranking list %s with %s candidates", list_name, len(payload.items))
     sorted_items = sorted(payload.items, key=extract_view_count, reverse=True)
     filtered = [item for item in sorted_items if filter_video(item.get("snippet", {}))]
+    normalized_candidates = [normalize_video_payload(item) for item in filtered]
 
-    recent_candidates = []
-    for item in filtered:
-        video_payload = normalize_video_payload(item)
-        if video_payload["published_at"] >= recent_threshold and is_long_video(video_payload):
-            recent_candidates.append(video_payload)
+    fallback_threshold = recent_threshold - timedelta(days=FALLBACK_DAYS - RECENT_DAYS)
+    target_count = min(top_n, MIN_WEEKLY_RESULTS)
 
-    truncated = recent_candidates[:top_n]
+    selected_candidates: List[Dict[str, Any]] = []
+    stage_counts = {
+        "strict_recent_long": _extend_unique_videos(
+            selected_candidates,
+            normalized_candidates,
+            lambda video: video["published_at"] >= recent_threshold
+            and has_min_duration(video, STRICT_MIN_DURATION_SECONDS),
+            top_n,
+        )
+    }
+
+    if len(selected_candidates) < target_count:
+        stage_counts["recent_short_fill"] = _extend_unique_videos(
+            selected_candidates,
+            normalized_candidates,
+            lambda video: video["published_at"] >= recent_threshold
+            and has_min_duration(video, RELAXED_MIN_DURATION_SECONDS),
+            top_n,
+        )
+
+    if len(selected_candidates) < target_count:
+        stage_counts["fallback_long_fill"] = _extend_unique_videos(
+            selected_candidates,
+            normalized_candidates,
+            lambda video: video["published_at"] >= fallback_threshold
+            and has_min_duration(video, STRICT_MIN_DURATION_SECONDS),
+            top_n,
+        )
+
+    if len(selected_candidates) < target_count:
+        stage_counts["fallback_short_fill"] = _extend_unique_videos(
+            selected_candidates,
+            normalized_candidates,
+            lambda video: video["published_at"] >= fallback_threshold
+            and has_min_duration(video, RELAXED_MIN_DURATION_SECONDS),
+            top_n,
+        )
+
+    truncated = selected_candidates[:top_n]
 
     if not truncated:
         logger.warning("No recent items survived filtering, nothing to persist.")
         return
+
+    logger.info(
+        "Selected %s videos (target=%s, strict=%s, recent_short=%s, fallback_long=%s, fallback_short=%s)",
+        len(truncated),
+        target_count,
+        stage_counts.get("strict_recent_long", 0),
+        stage_counts.get("recent_short_fill", 0),
+        stage_counts.get("fallback_long_fill", 0),
+        stage_counts.get("fallback_short_fill", 0),
+    )
 
     preview_count = min(5, len(truncated))
     logger.info("Top %s preview (title | channel | views):", preview_count)
