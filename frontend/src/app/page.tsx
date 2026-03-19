@@ -102,41 +102,6 @@ export default async function HomePage() {
   return (
     <main className="page-shell">
       <div className="app-shell">
-        <div className="page-intro">
-          <div className="hero-panel hero-grid">
-            <div className="hero-meta">
-              <div>
-                <p className="eyebrow">Calm Editorial Discovery</p>
-                <h1 className="page-title">Find the week’s softest ASMR picks, then filter fast.</h1>
-              </div>
-              <p className="page-description">
-                TingleRadar keeps the latest leaderboard close at hand, with quiet surfaces and
-                faster filtering tuned for late-night browsing on mobile first.
-              </p>
-              <div className="page-kicker">
-                <span className="info-pill">No white backgrounds</span>
-                <span className="info-pill">Built for whisper, roleplay, and no-talking sessions</span>
-              </div>
-            </div>
-
-            <div className="hero-aside">
-              <div className="aside-card">
-                <p className="aside-label">Listening mode</p>
-                <p className="aside-value">
-                  Start with filters, keep your place in the inline player, and move through the
-                  list without visual glare.
-                </p>
-              </div>
-              <div className="aside-card">
-                <p className="aside-label">Release cadence</p>
-                <p className="aside-value">
-                  Latest board refreshed weekly with catalog context carried into browse.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
         {ranking && <RankingExplorer ranking={ranking} />}
       </div>
     </main>
