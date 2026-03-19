@@ -19,3 +19,5 @@ backend/alembic/versions/*.pyc
 .DS_Store
 .env.local
 .env.*.local
+.worktrees/
+.superpowers/
