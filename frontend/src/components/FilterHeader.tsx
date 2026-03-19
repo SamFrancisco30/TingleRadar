@@ -24,7 +24,6 @@ export const FilterHeader: React.FC<FilterHeaderProps> = ({
   return (
     <div className="filter-header" style={{ marginBottom: hasBody ? "0.8rem" : 0 }}>
       <div className="filter-heading">
-        <p className="filter-subtitle">Filter-first listening</p>
         <h2 className="filter-title">{label}</h2>
         <p style={{ margin: 0, color: "var(--text-2)", fontSize: "0.82rem" }}>
           {activeCount > 0

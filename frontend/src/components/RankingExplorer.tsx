@@ -237,7 +237,6 @@ export function RankingExplorer({ ranking }: { ranking: RankingList }) {
       <div className="surface-panel">
         <div className="section-heading">
           <div>
-            <p className="eyebrow">This Week</p>
             <h2 className="section-title">Weekly Tingles</h2>
             <p className="section-copy">
               Move through the freshest list quickly, then let the inline player hold your place.

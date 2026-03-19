@@ -90,7 +90,6 @@ export default async function HomePage() {
       <main className="page-shell">
         <div className="app-shell">
           <div className="surface-panel">
-            <p className="eyebrow">TingleRadar</p>
             <h1 className="page-title">Weekly ASMR radar</h1>
             <p className="page-description">{(error as Error).message}</p>
           </div>

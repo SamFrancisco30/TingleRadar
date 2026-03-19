@@ -134,7 +134,6 @@ export default async function BrowsePage({
       <main className="page-shell">
         <div className="app-shell">
           <div className="surface-panel">
-            <p className="eyebrow">Browse</p>
             <h1 className="page-title">Catalog offline</h1>
             <p className="page-description">Backend URL is not configured.</p>
           </div>
@@ -148,7 +147,6 @@ export default async function BrowsePage({
       <main className="page-shell">
         <div className="app-shell">
           <div className="surface-panel">
-            <p className="eyebrow">Browse</p>
             <h1 className="page-title">Catalog unavailable</h1>
             <p className="page-description">Failed to load videos from backend.</p>
           </div>
@@ -203,7 +201,6 @@ export default async function BrowsePage({
           <div className="hero-panel hero-grid">
             <div className="hero-meta">
               <div>
-                <p className="eyebrow">ASMR Catalog</p>
                 <h1 className="page-title">Browse deeper without losing the quiet pace.</h1>
               </div>
               <p className="page-description">
