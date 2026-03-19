@@ -34,7 +34,6 @@ export type BrowseResponse = {
   page_size: number;
 };
 
-// Roleplay scene tags used in backend filtering logic.
 const roleplaySceneOptions = ["rp_haircut", "rp_cranial", "rp_dentist"];
 
 async function fetchVideos(
@@ -53,24 +52,12 @@ async function fetchVideos(
   const params = new URLSearchParams();
   params.set("page", String(page));
   params.set("page_size", "30");
-  if (options?.duration) {
-    params.set("duration_bucket", options.duration);
-  }
-  if (options?.tags && options.tags.length > 0) {
-    params.set("tags", options.tags.join(","));
-  }
-  if (options?.channels && options.channels.length > 0) {
-    params.set("channels", options.channels.join(","));
-  }
-  if (options?.language) {
-    params.set("language", options.language);
-  }
-  if (options?.sort) {
-    params.set("sort", options.sort);
-  }
-  if (options?.exclude && options.exclude.length > 0) {
-    params.set("exclude", options.exclude.join(","));
-  }
+  if (options?.duration) params.set("duration_bucket", options.duration);
+  if (options?.tags && options.tags.length > 0) params.set("tags", options.tags.join(","));
+  if (options?.channels && options.channels.length > 0) params.set("channels", options.channels.join(","));
+  if (options?.language) params.set("language", options.language);
+  if (options?.sort) params.set("sort", options.sort);
+  if (options?.exclude && options.exclude.length > 0) params.set("exclude", options.exclude.join(","));
 
   const res = await fetch(`${backendUrl}/videos?${params.toString()}`, {
     cache: "no-store",
@@ -80,8 +67,7 @@ async function fetchVideos(
     return null;
   }
 
-  const data = (await res.json()) as BrowseResponse;
-  return data;
+  return (await res.json()) as BrowseResponse;
 }
 
 export default async function BrowsePage({
@@ -126,9 +112,6 @@ export default async function BrowsePage({
         .filter(Boolean)
     : [];
 
-  // Mirror the BrowseFilterClient behavior on the server: when any roleplay scene
-  // tag is present, drop the generic "roleplay" tag so the backend OR logic
-  // actually filters by the specific scene tags.
   const hasSceneTag = selectedTags.some((t) => roleplaySceneOptions.includes(t));
   const tagsForFetch =
     hasSceneTag && selectedTags.includes("roleplay")
@@ -148,19 +131,29 @@ export default async function BrowsePage({
 
   if (!backendUrl) {
     return (
-      <div style={{ minHeight: "100vh", background: "#05070a", color: "#eee", padding: "3rem" }}>
-        <h1 style={{ fontSize: "2.4rem", marginBottom: "1rem" }}>Browse</h1>
-        <p>Backend URL is not configured.</p>
-      </div>
+      <main className="page-shell">
+        <div className="app-shell">
+          <div className="surface-panel">
+            <p className="eyebrow">Browse</p>
+            <h1 className="page-title">Catalog offline</h1>
+            <p className="page-description">Backend URL is not configured.</p>
+          </div>
+        </div>
+      </main>
     );
   }
 
   if (!data) {
     return (
-      <div style={{ minHeight: "100vh", background: "#05070a", color: "#eee", padding: "3rem" }}>
-        <h1 style={{ fontSize: "2.4rem", marginBottom: "1rem" }}>Browse</h1>
-        <p>Failed to load videos from backend.</p>
-      </div>
+      <main className="page-shell">
+        <div className="app-shell">
+          <div className="surface-panel">
+            <p className="eyebrow">Browse</p>
+            <h1 className="page-title">Catalog unavailable</h1>
+            <p className="page-description">Failed to load videos from backend.</p>
+          </div>
+        </div>
+      </main>
     );
   }
 
@@ -170,71 +163,21 @@ export default async function BrowsePage({
   const totalPages = Math.max(1, Math.ceil(total / page_size));
 
   const Pagination = () => (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        flexWrap: "wrap",
-        rowGap: "0.5rem",
-        marginBottom: "1rem",
-        marginTop: "0.5rem",
-      }}
-    >
-      <span style={{ fontSize: "0.85rem", color: "#cbd5f5" }}>
+    <div className="pagination-row">
+      <span className="playlist-status">
         Page {currentPage} / {totalPages} · {items.length} videos · total {total}
       </span>
-      <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-        <a
-          href={currentPage > 1 ? `/browse?page=1` : "#"}
-          style={{
-            padding: "0.35rem 0.8rem",
-            borderRadius: "999px",
-            border: "1px solid #4b5563",
-            background: "#020617",
-            color: currentPage > 1 ? "#e5e7eb" : "#4b5563",
-            fontSize: "0.75rem",
-            pointerEvents: currentPage > 1 ? "auto" : "none",
-            textDecoration: "none",
-          }}
-        >
+      <div className="toolbar-row" style={{ gap: "0.5rem" }}>
+        <a href={currentPage > 1 ? `/browse?page=1` : "#"} className="ghost-button">
           First
         </a>
-        <a
-          href={hasPrev ? `/browse?page=${currentPage - 1}` : "#"}
-          style={{
-            padding: "0.35rem 0.85rem",
-            borderRadius: "999px",
-            border: "1px solid #4b5563",
-            background: "#020617",
-            color: hasPrev ? "#e5e7eb" : "#4b5563",
-            fontSize: "0.75rem",
-            pointerEvents: hasPrev ? "auto" : "none",
-            textDecoration: "none",
-          }}
-        >
+        <a href={hasPrev ? `/browse?page=${currentPage - 1}` : "#"} className="ghost-button">
           Prev
         </a>
-        <a
-          href={hasNext ? `/browse?page=${currentPage + 1}` : "#"}
-          style={{
-            padding: "0.35rem 0.85rem",
-            borderRadius: "999px",
-            border: "1px solid #4b5563",
-            background: "#020617",
-            color: hasNext ? "#e5e7eb" : "#4b5563",
-            fontSize: "0.75rem",
-            pointerEvents: hasNext ? "auto" : "none",
-            textDecoration: "none",
-          }}
-        >
+        <a href={hasNext ? `/browse?page=${currentPage + 1}` : "#"} className="ghost-button">
           Next
         </a>
-        <form
-          action="/browse"
-          method="get"
-          style={{ display: "flex", alignItems: "center", gap: "0.3rem", marginLeft: "0.5rem" }}
-        >
+        <form action="/browse" method="get" style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
           <input
             type="number"
             name="page"
@@ -242,31 +185,10 @@ export default async function BrowsePage({
             max={totalPages}
             defaultValue={currentPage}
             placeholder="Pg"
-            style={{
-              width: "3rem",
-              padding: "0.2rem 0.35rem",
-              borderRadius: "0.4rem",
-              border: "1px solid #4b5563",
-              background: "#020617",
-              color: "#e5e7eb",
-              fontSize: "0.75rem",
-              textAlign: "center",
-              WebkitAppearance: "none",
-              MozAppearance: "textfield",
-            }}
+            className="input-shell"
+            style={{ width: "4rem", textAlign: "center", padding: "0.48rem 0.6rem" }}
           />
-          <button
-            type="submit"
-            style={{
-              padding: "0.25rem 0.6rem",
-              borderRadius: "999px",
-              border: "1px solid #4b5563",
-              background: "#020617",
-              color: "#e5e7eb",
-              fontSize: "0.75rem",
-              cursor: "pointer",
-            }}
-          >
+          <button type="submit" className="subtle-button">
             Go
           </button>
         </form>
@@ -275,44 +197,39 @@ export default async function BrowsePage({
   );
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "linear-gradient(180deg, #040710, #0b1222 60%, #06050a)",
-        color: "#f5f5f5",
-      }}
-    >
-      <div style={{ maxWidth: "960px", margin: "0 auto", padding: "2.5rem 1.25rem" }}>
-        <header style={{ marginBottom: "2rem" }}>
-          <p style={{ letterSpacing: "0.4em", fontSize: "0.8rem", color: "#6b7280" }}>
-            ASMR CATALOG
-          </p>
-          <h1 style={{ fontSize: "2.4rem", margin: "0.5rem 0" }}>Browse all videos</h1>
-          <p style={{ color: "#cbd5f5", fontSize: "0.95rem", maxWidth: "640px" }}>
-            This is an early explorer over the full TingleRadar video catalog. Use it to
-            skim channels, triggers, and durations beyond the weekly leaderboard.
-          </p>
-        </header>
+    <main className="page-shell">
+      <div className="app-shell">
+        <div className="page-intro">
+          <div className="hero-panel hero-grid">
+            <div className="hero-meta">
+              <div>
+                <p className="eyebrow">ASMR Catalog</p>
+                <h1 className="page-title">Browse deeper without losing the quiet pace.</h1>
+              </div>
+              <p className="page-description">
+                Explore the full TingleRadar catalog with the same low-glare shell as the weekly
+                board, then keep results moving with a pinned inline player.
+              </p>
+            </div>
+            <div className="hero-aside">
+              <div className="aside-card">
+                <p className="aside-label">Scope</p>
+                <p className="aside-value">{total} videos across the current ingestion window.</p>
+              </div>
+              <div className="aside-card">
+                <p className="aside-label">Use case</p>
+                <p className="aside-value">Great for channel dives, trigger mixes, and late-night reranking.</p>
+              </div>
+            </div>
+          </div>
+        </div>
 
-        <div
-          style={{
-            borderRadius: "1.5rem",
-            background: "rgba(15, 20, 36, 0.75)",
-            border: "1px solid #1e293b",
-            padding: "1.5rem",
-            boxShadow: "0 20px 80px rgba(5, 6, 15, 0.45)",
-          }}
-        >
-          {/* Filters */}
+        <div className="surface-panel">
           <BrowseFilterClient channels={channels} />
-
-          {/* Inline player controls, player, and list for current page */}
           <BrowsePlayerClient items={items} />
-
           <Pagination />
         </div>
       </div>
-    </div>
+    </main>
   );
 }
-

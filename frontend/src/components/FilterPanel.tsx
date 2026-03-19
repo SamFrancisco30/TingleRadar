@@ -8,7 +8,7 @@ export type FilterState = {
   talkingStyleFilters: string[];
   roleplayScenes: string[];
   languageFilters: string[];
-  excludeTags: string[]; // tags to exclude from results
+  excludeTags: string[];
 };
 
 export const durationBuckets = [
@@ -28,22 +28,14 @@ export const triggerTypeOptions: string[] = [
   "binaural",
   "visual_asmr",
   "layered",
-  "roleplay", // kept in the internal list for parsing/URL mapping
+  "roleplay",
 ];
 
 const ROLEPLAY_TRIGGER_ID = "roleplay";
 
-export const talkingStyleOptions: string[] = [
-  "whisper",
-  "soft_spoken",
-  "no_talking",
-];
+export const talkingStyleOptions: string[] = ["whisper", "soft_spoken", "no_talking"];
 
-export const roleplaySceneOptions: string[] = [
-  "rp_haircut",
-  "rp_cranial",
-  "rp_dentist",
-];
+export const roleplaySceneOptions: string[] = ["rp_haircut", "rp_cranial", "rp_dentist"];
 
 export const languageOptions = ["en", "ja", "ko", "zh"];
 
@@ -83,13 +75,13 @@ export const displayTag = (tag: string): string => {
 };
 
 export const chipStyle = (active?: boolean) => ({
-  padding: "0.35rem 0.75rem",
+  padding: "0.42rem 0.8rem",
   borderRadius: "999px",
   border: "1px solid",
-  borderColor: active ? "#059669" : "#475569",
-  background: active ? "#059669" : "#0f172a",
-  color: active ? "#fff" : "#e2e8f0",
-  fontSize: "0.7rem",
+  borderColor: active ? "rgba(141, 196, 177, 0.3)" : "rgba(148, 184, 171, 0.14)",
+  background: active ? "rgba(86, 149, 129, 0.22)" : "rgba(13, 24, 29, 0.92)",
+  color: active ? "#f1f7f3" : "var(--text-1)",
+  fontSize: "0.75rem",
   cursor: "pointer",
   transition: "border-color 150ms ease, background 150ms ease",
 });
@@ -103,14 +95,28 @@ const EXCLUDABLE_TAGS = Array.from(
   new Set([...triggerTypeOptions, ...talkingStyleOptions, ...roleplaySceneOptions])
 );
 
+type FilterSectionProps = {
+  title: string;
+  children: React.ReactNode;
+};
+
+function FilterSection({ title, children }: FilterSectionProps) {
+  return (
+    <div className="filter-group">
+      <p className="filter-group-title">{title}</p>
+      {children}
+    </div>
+  );
+}
+
 export function FilterPanel({ state, onChange }: FilterPanelProps) {
-  const { duration, triggerFilters, talkingStyleFilters, roleplayScenes, languageFilters, excludeTags } = state;
+  const { duration, triggerFilters, talkingStyleFilters, roleplayScenes, languageFilters, excludeTags } =
+    state;
 
   const [excludeSearchOpen, setExcludeSearchOpen] = useState(false);
   const [excludeQuery, setExcludeQuery] = useState("");
   const excludePanelRef = useRef<HTMLDivElement | null>(null);
 
-  // Close exclude search when clicking outside the panel.
   useEffect(() => {
     if (!excludeSearchOpen) return;
 
@@ -137,21 +143,9 @@ export function FilterPanel({ state, onChange }: FilterPanelProps) {
   }, [excludeQuery, excludeTags]);
 
   return (
-    <>
-      {/* Duration */}
-      <div style={{ marginTop: "0.9rem" }}>
-        <p
-          style={{
-            fontSize: "0.65rem",
-            letterSpacing: "0.3em",
-            textTransform: "uppercase",
-            color: "#9ca3af",
-            marginBottom: "0.3rem",
-          }}
-        >
-          Duration
-        </p>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
+    <div className="filter-panel-grid">
+      <FilterSection title="Duration">
+        <div className="chip-row">
           {durationBuckets.map((bucket) => (
             <button
               key={bucket.id}
@@ -167,22 +161,10 @@ export function FilterPanel({ state, onChange }: FilterPanelProps) {
             </button>
           ))}
         </div>
-      </div>
+      </FilterSection>
 
-      {/* Trigger type */}
-      <div style={{ marginTop: "0.9rem" }}>
-        <p
-          style={{
-            fontSize: "0.65rem",
-            letterSpacing: "0.3em",
-            textTransform: "uppercase",
-            color: "#9ca3af",
-            marginBottom: "0.3rem",
-          }}
-        >
-          Trigger Type
-        </p>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
+      <FilterSection title="Trigger Type">
+        <div className="chip-row">
           {triggerTypeOptions
             .filter((type) => type !== ROLEPLAY_TRIGGER_ID)
             .map((type) => {
@@ -205,22 +187,10 @@ export function FilterPanel({ state, onChange }: FilterPanelProps) {
               );
             })}
         </div>
-      </div>
+      </FilterSection>
 
-      {/* Roleplay */}
-      <div style={{ marginTop: "0.9rem" }}>
-        <p
-          style={{
-            fontSize: "0.65rem",
-            letterSpacing: "0.3em",
-            textTransform: "uppercase",
-            color: "#9ca3af",
-            marginBottom: "0.3rem",
-          }}
-        >
-          Roleplay
-        </p>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
+      <FilterSection title="Roleplay">
+        <div className="chip-row">
           <button
             type="button"
             style={chipStyle(triggerFilters.includes(ROLEPLAY_TRIGGER_ID))}
@@ -231,7 +201,6 @@ export function FilterPanel({ state, onChange }: FilterPanelProps) {
                 triggerFilters: active
                   ? triggerFilters.filter((t) => t !== ROLEPLAY_TRIGGER_ID)
                   : [...triggerFilters, ROLEPLAY_TRIGGER_ID],
-                // If roleplay is turned off, also clear roleplay scenes.
                 roleplayScenes: active ? [] : state.roleplayScenes,
               });
             }}
@@ -239,23 +208,11 @@ export function FilterPanel({ state, onChange }: FilterPanelProps) {
             {displayTag(ROLEPLAY_TRIGGER_ID)}
           </button>
         </div>
-      </div>
+      </FilterSection>
 
-      {/* Roleplay scenes: show when Roleplay is selected OR any scene is active */}
       {(triggerFilters.includes("roleplay") || roleplayScenes.length > 0) && (
-        <div style={{ marginTop: "0.9rem" }}>
-          <p
-            style={{
-              fontSize: "0.65rem",
-              letterSpacing: "0.3em",
-              textTransform: "uppercase",
-              color: "#9ca3af",
-              marginBottom: "0.3rem",
-            }}
-          >
-            Roleplay scene
-          </p>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
+        <FilterSection title="Roleplay scene">
+          <div className="chip-row">
             {roleplaySceneOptions.map((scene) => {
               const active = roleplayScenes.includes(scene);
               return (
@@ -264,13 +221,11 @@ export function FilterPanel({ state, onChange }: FilterPanelProps) {
                   style={chipStyle(active)}
                   onClick={() => {
                     if (active) {
-                      // Removing a scene does not auto-toggle off the Roleplay chip.
                       onChange({
                         ...state,
                         roleplayScenes: roleplayScenes.filter((s) => s !== scene),
                       });
                     } else {
-                      // Adding a scene should also ensure the generic Roleplay chip is active.
                       const nextScenes = [...roleplayScenes, scene];
                       const hasRoleplay = triggerFilters.includes(ROLEPLAY_TRIGGER_ID);
                       onChange({
@@ -288,23 +243,11 @@ export function FilterPanel({ state, onChange }: FilterPanelProps) {
               );
             })}
           </div>
-        </div>
+        </FilterSection>
       )}
 
-      {/* Talking style */}
-      <div style={{ marginTop: "0.9rem" }}>
-        <p
-          style={{
-            fontSize: "0.65rem",
-            letterSpacing: "0.3em",
-            textTransform: "uppercase",
-            color: "#9ca3af",
-            marginBottom: "0.3rem",
-          }}
-        >
-          Talking style
-        </p>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
+      <FilterSection title="Talking style">
+        <div className="chip-row">
           {talkingStyleOptions.map((style) => {
             const active = talkingStyleFilters.includes(style);
             return (
@@ -325,22 +268,10 @@ export function FilterPanel({ state, onChange }: FilterPanelProps) {
             );
           })}
         </div>
-      </div>
+      </FilterSection>
 
-      {/* Language */}
-      <div style={{ marginTop: "0.9rem" }}>
-        <p
-          style={{
-            fontSize: "0.65rem",
-            letterSpacing: "0.3em",
-            textTransform: "uppercase",
-            color: "#9ca3af",
-            marginBottom: "0.3rem",
-          }}
-        >
-          Language
-        </p>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
+      <FilterSection title="Language">
+        <div className="chip-row">
           {languageOptions.map((code) => {
             const active = languageFilters.includes(code);
             return (
@@ -361,23 +292,10 @@ export function FilterPanel({ state, onChange }: FilterPanelProps) {
             );
           })}
         </div>
-      </div>
+      </FilterSection>
 
-      {/* Exclude tags */}
-      <div style={{ marginTop: "0.9rem" }}>
-        <p
-          style={{
-            fontSize: "0.65rem",
-            letterSpacing: "0.3em",
-            textTransform: "uppercase",
-            color: "#9ca3af",
-            marginBottom: "0.3rem",
-          }}
-        >
-          Exclude tags
-        </p>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
-          {/* 已选中的排除标签 */}
+      <FilterSection title="Exclude tags">
+        <div className="chip-row">
           {excludeTags.map((tag) => (
             <button
               key={tag}
@@ -393,7 +311,6 @@ export function FilterPanel({ state, onChange }: FilterPanelProps) {
             </button>
           ))}
 
-          {/* 添加新排除 tag 的入口 */}
           <button
             type="button"
             style={chipStyle(false)}
@@ -410,10 +327,10 @@ export function FilterPanel({ state, onChange }: FilterPanelProps) {
           <div
             ref={excludePanelRef}
             style={{
-              marginTop: "0.5rem",
-              borderRadius: "0.75rem",
-              border: "1px solid #1f2937",
-              background: "#020617",
+              marginTop: "0.6rem",
+              borderRadius: "1rem",
+              border: "1px solid rgba(148, 184, 171, 0.12)",
+              background: "rgba(7, 15, 19, 0.92)",
               padding: "0.6rem 0.75rem",
             }}
           >
@@ -432,15 +349,8 @@ export function FilterPanel({ state, onChange }: FilterPanelProps) {
                 placeholder="Search tags to exclude..."
                 value={excludeQuery}
                 onChange={(e) => setExcludeQuery(e.target.value)}
-                style={{
-                  flex: 1,
-                  padding: "0.35rem 0.5rem",
-                  borderRadius: "0.5rem",
-                  border: "1px solid #4b5563",
-                  background: "#020617",
-                  color: "#e5e7eb",
-                  fontSize: "0.75rem",
-                }}
+                className="input-shell"
+                style={{ flex: 1, fontSize: "0.8rem" }}
               />
               <button
                 type="button"
@@ -448,15 +358,8 @@ export function FilterPanel({ state, onChange }: FilterPanelProps) {
                   setExcludeSearchOpen(false);
                   setExcludeQuery("");
                 }}
-                style={{
-                  borderRadius: "999px",
-                  border: "1px solid #4b5563",
-                  background: "transparent",
-                  color: "#cbd5f5",
-                  fontSize: "0.7rem",
-                  padding: "0.2rem 0.6rem",
-                  cursor: "pointer",
-                }}
+                className="ghost-button"
+                style={{ minHeight: "1.9rem", padding: "0.25rem 0.7rem", fontSize: "0.72rem" }}
               >
                 Done
               </button>
@@ -471,8 +374,6 @@ export function FilterPanel({ state, onChange }: FilterPanelProps) {
                       ...state,
                       excludeTags: [...excludeTags, tag],
                     });
-                    // 保持面板打开，让用户可以连续选择多个 tag；
-                    // 真正关闭由 Done 按钮或点击外部触发。
                   }}
                   style={{
                     display: "block",
@@ -481,8 +382,8 @@ export function FilterPanel({ state, onChange }: FilterPanelProps) {
                     padding: "0.3rem 0.3rem",
                     border: "none",
                     background: "transparent",
-                    color: "#cbd5f5",
-                    fontSize: "0.75rem",
+                    color: "var(--text-1)",
+                    fontSize: "0.78rem",
                     cursor: "pointer",
                   }}
                 >
@@ -490,20 +391,14 @@ export function FilterPanel({ state, onChange }: FilterPanelProps) {
                 </button>
               ))}
               {filteredExcludeOptions.length === 0 && (
-                <p
-                  style={{
-                    fontSize: "0.7rem",
-                    color: "#6b7280",
-                    margin: 0,
-                  }}
-                >
+                <p style={{ fontSize: "0.72rem", color: "var(--text-3)", margin: 0 }}>
                   No matching tags.
                 </p>
               )}
             </div>
           </div>
         )}
-      </div>
-    </>
+      </FilterSection>
+    </div>
   );
 }

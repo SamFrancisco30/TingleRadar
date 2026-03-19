@@ -50,9 +50,7 @@ export function InlinePlayer({ videoIds, currentIndex, onIndexChange }: InlinePl
             onStateChange: (event: any) => {
               const ENDED = (window as any).YT?.PlayerState?.ENDED;
               if (ENDED != null && event.data === ENDED) {
-                onIndexChange(
-                  currentIndex < videoIds.length - 1 ? currentIndex + 1 : currentIndex
-                );
+                onIndexChange(currentIndex < videoIds.length - 1 ? currentIndex + 1 : currentIndex);
               }
             },
           },
@@ -84,7 +82,7 @@ export function InlinePlayer({ videoIds, currentIndex, onIndexChange }: InlinePl
     }
 
     return () => {
-      // keep player alive while component is mounted; cleanup handled on unmount
+      // Keep player alive while the component is mounted.
     };
   }, [currentVideoId, currentIndex, videoIds.length, onIndexChange]);
 
@@ -100,25 +98,17 @@ export function InlinePlayer({ videoIds, currentIndex, onIndexChange }: InlinePl
 
   return (
     <div
+      className="player-sticky-wrap"
       style={{
         position: isMobile ? "sticky" : "relative",
         top: isMobile ? 0 : undefined,
-        zIndex: 40,
-        marginBottom: "1.5rem",
-        paddingTop: isMobile ? "0.5rem" : 0,
+        paddingTop: isMobile ? "0.35rem" : 0,
         background: isMobile
-          ? "linear-gradient(180deg, rgba(5,7,10,0.98) 0%, rgba(5,7,10,0.9) 60%, rgba(5,7,10,0) 100%)"
+          ? "linear-gradient(180deg, rgba(7,16,23,0.98) 0%, rgba(7,16,23,0.92) 60%, rgba(7,16,23,0) 100%)"
           : "transparent",
       }}
     >
-      <div
-        style={{
-          borderRadius: "1.25rem",
-          overflow: "hidden",
-          border: "1px solid #1f2937",
-          background: "#020617",
-        }}
-      >
+      <div className="player-shell">
         <div
           style={{
             position: "relative",

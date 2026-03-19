@@ -15,13 +15,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body
-        style={{
-          margin: 0,
-          fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif",
-        }}
-      >
-        <NavBar />
+      <body className="app-body">
+        <div className="app-shell">
+          <NavBar />
+        </div>
         {children}
         <SpeedInsights />
       </body>

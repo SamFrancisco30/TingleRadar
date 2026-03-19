@@ -30,8 +30,6 @@ function parseFiltersFromSearchParams(searchParams: URLSearchParams): FilterStat
   const talkingStyleFilters = tagList.filter((t) => talkingStyleOptions.includes(t));
   const roleplayScenes = tagList.filter((t) => roleplaySceneOptions.includes(t));
 
-  // 如果 URL 里有具体的 roleplay scene（rp_*），但没有显式带 roleplay，
-  // 在 UI 层仍然把 Roleplay 视为选中，以保持视觉和语义一致。
   const triggerFilters =
     roleplayScenes.length > 0 && !rawTriggerFilters.includes("roleplay")
       ? [...rawTriggerFilters, "roleplay"]
@@ -64,19 +62,12 @@ function buildTagsFromFilters(filters: FilterState, existingTags: string[]): str
       !roleplaySceneOptions.includes(t)
   );
 
-  // When any roleplay scene is selected, drop the generic "roleplay" tag so
-  // the backend OR logic actually narrows results to the specific scenes.
   const triggerTags =
     filters.roleplayScenes.length > 0
       ? filters.triggerFilters.filter((t) => t !== "roleplay")
       : filters.triggerFilters;
 
-  return [
-    ...base,
-    ...triggerTags,
-    ...filters.talkingStyleFilters,
-    ...filters.roleplayScenes,
-  ];
+  return [...base, ...triggerTags, ...filters.talkingStyleFilters, ...filters.roleplayScenes];
 }
 
 export type BrowseFilterClientProps = {
@@ -91,8 +82,6 @@ export function BrowseFilterClient({ channels }: BrowseFilterClientProps) {
   const params = useMemo(() => new URLSearchParams(searchParams.toString()), [searchParams]);
 
   const [filtersCollapsed, setFiltersCollapsed] = useState(false);
-
-  // Local filter state, initialized from the URL but decoupled from it.
   const [localFilters, setLocalFilters] = useState<FilterState>(() => parseFiltersFromSearchParams(params));
 
   useEffect(() => {
@@ -101,7 +90,6 @@ export function BrowseFilterClient({ channels }: BrowseFilterClientProps) {
     setFiltersCollapsed(mq.matches);
   }, []);
 
-  // When URL params change externally (e.g., via back/forward), sync local filters.
   useEffect(() => {
     setLocalFilters(parseFiltersFromSearchParams(params));
   }, [params]);
@@ -149,30 +137,25 @@ export function BrowseFilterClient({ channels }: BrowseFilterClientProps) {
   const updateSearchParams = (nextFilters: FilterState) => {
     const nextParams = new URLSearchParams(searchParams.toString());
 
-    // Duration
     if (nextFilters.duration) {
       nextParams.set("duration", nextFilters.duration);
     } else {
       nextParams.delete("duration");
     }
 
-    // Language: single param, take first language filter if any
     if (nextFilters.languageFilters[0]) {
       nextParams.set("language", nextFilters.languageFilters[0]);
     } else {
       nextParams.delete("language");
     }
 
-    // Tags: merge with any unknown tags
-    const existingTags = selectedTags;
-    const mergedTags = buildTagsFromFilters(nextFilters, existingTags);
+    const mergedTags = buildTagsFromFilters(nextFilters, selectedTags);
     if (mergedTags.length) {
       nextParams.set("tags", mergedTags.join(","));
     } else {
       nextParams.delete("tags");
     }
 
-    // Exclude tags
     if (nextFilters.excludeTags.length) {
       nextParams.set("exclude", nextFilters.excludeTags.join(","));
     } else {
@@ -196,16 +179,7 @@ export function BrowseFilterClient({ channels }: BrowseFilterClientProps) {
   };
 
   return (
-    <div
-      style={{
-        borderRadius: "1.25rem",
-        border: "1px solid #1f2937",
-        background: "rgba(15, 23, 42, 0.75)",
-        padding: "1rem",
-        marginBottom: "1rem",
-        backdropFilter: "blur(8px)",
-      }}
-    >
+    <div className="control-panel" style={{ marginBottom: "1rem" }}>
       <FilterHeader
         label="Filter catalog"
         activeCount={activeCount}
@@ -218,19 +192,8 @@ export function BrowseFilterClient({ channels }: BrowseFilterClientProps) {
 
       {!filtersCollapsed && (
         <>
-          {/* Channel */}
-          <div style={{ marginTop: "0.4rem" }}>
-            <p
-              style={{
-                fontSize: "0.65rem",
-                letterSpacing: "0.3em",
-                textTransform: "uppercase",
-                color: "#9ca3af",
-                marginBottom: "0.3rem",
-              }}
-            >
-              Channel
-            </p>
+          <div className="filter-group" style={{ marginTop: "0.2rem" }}>
+            <p className="filter-group-title">Channel</p>
             <ChannelFilterClient
               channels={channels}
               duration={filters.duration}
@@ -239,20 +202,9 @@ export function BrowseFilterClient({ channels }: BrowseFilterClientProps) {
             />
           </div>
 
-          {/* Sort */}
-          <div style={{ marginTop: "0.4rem" }}>
-            <p
-              style={{
-                fontSize: "0.65rem",
-                letterSpacing: "0.3em",
-                textTransform: "uppercase",
-                color: "#9ca3af",
-                marginBottom: "0.3rem",
-              }}
-            >
-              Sort by
-            </p>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
+          <div className="filter-group" style={{ marginTop: "0.8rem" }}>
+            <p className="filter-group-title">Sort by</p>
+            <div className="chip-row">
               {[
                 { id: "published_desc", label: "Newest" },
                 { id: "views_desc", label: "Most viewed" },
@@ -266,11 +218,7 @@ export function BrowseFilterClient({ channels }: BrowseFilterClientProps) {
                     onClick={() => {
                       const nextParams = new URLSearchParams(searchParams.toString());
 
-                      if (opt.id === "published_desc") {
-                        // Always reset to default: remove sort param
-                        nextParams.delete("sort");
-                      } else if (active) {
-                        // Clicking the active non-default sort returns to default
+                      if (opt.id === "published_desc" || active) {
                         nextParams.delete("sort");
                       } else {
                         nextParams.set("sort", opt.id);
@@ -280,13 +228,15 @@ export function BrowseFilterClient({ channels }: BrowseFilterClientProps) {
                       router.push(`${pathname}?${nextParams.toString()}`, { scroll: false });
                     }}
                     style={{
-                      padding: "0.35rem 0.75rem",
+                      padding: "0.42rem 0.8rem",
                       borderRadius: "999px",
                       border: "1px solid",
-                      borderColor: active ? "#2563eb" : "#475569",
-                      background: active ? "#2563eb" : "#0f172a",
-                      color: active ? "#fff" : "#e2e8f0",
-                      fontSize: "0.7rem",
+                      borderColor: active
+                        ? "rgba(157, 191, 202, 0.3)"
+                        : "rgba(148, 184, 171, 0.14)",
+                      background: active ? "rgba(94, 126, 137, 0.24)" : "rgba(13, 24, 29, 0.92)",
+                      color: active ? "#eef4f7" : "var(--text-1)",
+                      fontSize: "0.75rem",
                       textDecoration: "none",
                       cursor: "pointer",
                     }}
@@ -298,24 +248,12 @@ export function BrowseFilterClient({ channels }: BrowseFilterClientProps) {
             </div>
           </div>
 
-          {/* Shared duration + trigger + talking style + roleplay scene + language */}
-          <FilterPanel state={filters} onChange={setLocalFilters} />
+          <div style={{ marginTop: "0.8rem" }}>
+            <FilterPanel state={filters} onChange={setLocalFilters} />
+          </div>
 
-          {/* Apply button: sync local filters to URL and trigger new fetch */}
-          <div style={{ marginTop: "0.75rem", display: "flex", justifyContent: "flex-end" }}>
-            <button
-              type="button"
-              onClick={() => updateSearchParams(localFilters)}
-              style={{
-                borderRadius: "999px",
-                border: "1px solid #4b5563",
-                background: "#020617",
-                color: "#e5e7eb",
-                padding: "0.35rem 0.9rem",
-                fontSize: "0.75rem",
-                cursor: "pointer",
-              }}
-            >
+          <div style={{ marginTop: "0.8rem", display: "flex", justifyContent: "flex-end" }}>
+            <button type="button" onClick={() => updateSearchParams(localFilters)} className="primary-button">
               Apply filters
             </button>
           </div>

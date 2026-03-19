@@ -63,7 +63,7 @@ export function BrowsePlayerClient({ items }: BrowsePlayerClientProps) {
         />
       )}
 
-      <div style={{ marginTop: "0.75rem" }}>
+      <div className="list-stack" style={{ marginTop: "0.75rem" }}>
         {normalizedItems.map((video, index) => {
           const isActive =
             showInlinePlayer &&
@@ -90,7 +90,7 @@ export function BrowsePlayerClient({ items }: BrowsePlayerClientProps) {
         })}
 
         {items.length === 0 && (
-          <p style={{ fontSize: "0.9rem", color: "#9ca3af" }}>
+          <p className="empty-state">
             No videos found yet. Try again after the next ingestion run.
           </p>
         )}

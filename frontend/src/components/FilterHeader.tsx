@@ -22,64 +22,27 @@ export const FilterHeader: React.FC<FilterHeaderProps> = ({
   onClear,
 }) => {
   return (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        gap: "0.75rem",
-        marginBottom: hasBody ? "0.6rem" : 0,
-      }}
-    >
-      <div>
-        <p
-          style={{
-            fontSize: "0.6rem",
-            letterSpacing: "0.3em",
-            textTransform: "uppercase",
-            color: "#94a3b8",
-            margin: 0,
-          }}
-        >
-          {label}
-          {activeCount > 0 && (
-            <span style={{ fontSize: "0.7rem", color: "#9ca3af", marginLeft: "0.5rem" }}>
-              · {activeCount} active
-            </span>
-          )}
+    <div className="filter-header" style={{ marginBottom: hasBody ? "0.8rem" : 0 }}>
+      <div className="filter-heading">
+        <p className="filter-subtitle">Filter-first listening</p>
+        <h2 className="filter-title">{label}</h2>
+        <p style={{ margin: 0, color: "var(--text-2)", fontSize: "0.82rem" }}>
+          {activeCount > 0
+            ? `${activeCount} active filters shaping this list.`
+            : "Narrow the catalog without losing the calm overview."}
         </p>
       </div>
-      <div style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}>
+      <div className="filter-actions">
         {hasAnyFilter && onClear && (
-          <button
-            type="button"
-            onClick={onClear}
-            style={{
-              border: "1px solid #475569",
-              background: "transparent",
-              color: "#cbd5f5",
-              padding: "0.35rem 0.8rem",
-              borderRadius: "999px",
-              fontSize: "0.7rem",
-              cursor: "pointer",
-            }}
-          >
+          <button type="button" onClick={onClear} className="ghost-button">
             Clear
           </button>
         )}
         <button
           type="button"
           onClick={onToggleCollapsed}
-          style={{
-            border: "1px solid #475569",
-            background: "transparent",
-            color: "#cbd5f5",
-            padding: "0.35rem 0.8rem",
-            borderRadius: "999px",
-            fontSize: "0.7rem",
-            cursor: "pointer",
-            whiteSpace: "nowrap",
-          }}
+          className="subtle-button"
+          style={{ whiteSpace: "nowrap" }}
         >
           {filtersCollapsed ? "Show filters" : "Hide filters"}
         </button>

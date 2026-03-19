@@ -93,8 +93,6 @@ export const VideoCard: React.FC<VideoCardProps> = ({
   onPlayClick,
   active,
 }) => {
-  const Wrapper: React.ElementType = "article";
-
   const [menuOpen, setMenuOpen] = useState(false);
   const [editTagsMode, setEditTagsMode] = useState(false);
   const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
@@ -128,7 +126,7 @@ export const VideoCard: React.FC<VideoCardProps> = ({
         body: JSON.stringify({ vote }),
       });
     } catch {
-      // 静默失败即可，不打扰用户
+      // Silent failure keeps the card interaction lightweight.
     }
   };
 
@@ -160,37 +158,14 @@ export const VideoCard: React.FC<VideoCardProps> = ({
   };
 
   return (
-    <Wrapper
-      className="video-card"
-      style={{
-        display: "flex",
-        gap: "1rem",
-        marginBottom: "1rem",
-        padding: "1rem",
-        borderRadius: "1.25rem",
-        border: active ? "1px solid #4ade80" : "1px solid #1e293b",
-        background: active ? "rgba(22, 163, 74, 0.16)" : "rgba(15, 23, 42, 0.75)",
-        boxShadow: "0 15px 40px rgba(2, 6, 23, 0.55)",
-        alignItems: "center",
-        width: "100%",
-        textAlign: "left",
-        cursor: "default",
-        borderColor: active ? "#4ade80" : "#1e293b",
-        position: "relative",
-      }}
-    >
-      <div className="video-card-thumbnail" style={{ minWidth: "180px", maxWidth: "220px" }}>
+    <article className={`video-card${active ? " active" : ""}`}>
+      <div className="video-card-thumbnail">
         {thumbnailUrl ? (
           <img
             src={thumbnailUrl}
             alt={title}
             style={{
-              width: "100%",
-              height: "auto",
-              aspectRatio: "16 / 9",
-              objectFit: "cover",
-              borderRadius: "1rem",
-              filter: "brightness(0.9)",
+              filter: active ? "brightness(1)" : "brightness(0.9)",
             }}
           />
         ) : (
@@ -198,46 +173,32 @@ export const VideoCard: React.FC<VideoCardProps> = ({
             style={{
               width: "100%",
               height: "120px",
-              borderRadius: "1rem",
-              background: "#020617",
+              borderRadius: "18px",
+              background: "rgba(7, 15, 19, 0.92)",
             }}
           />
         )}
       </div>
 
-      <div style={{ flex: 1 }}>
-        {typeof rank === "number" && (
-          <p style={{ letterSpacing: "0.3em", fontSize: "0.65rem", color: "#475569" }}>#{rank}</p>
-        )}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        {typeof rank === "number" && <p className="video-card-rank">#{rank}</p>}
         <a
           href={`https://youtube.com/watch?v=${youtubeId}`}
           target="_blank"
           rel="noreferrer"
-          style={{
-            color: "#c084fc",
-            fontSize: "1.2rem",
-            fontWeight: 600,
-            textDecoration: "none",
-          }}
+          className="video-card-title"
         >
           {title}
         </a>
-        <div style={{ color: "#94a3b8", marginTop: "0.25rem", fontSize: "0.9rem" }}>{channelTitle}</div>
-        <div style={{ fontSize: "0.85rem", color: "#9ca3af", marginTop: "0.15rem" }}>
-          Views {viewCount.toLocaleString()} · Likes {likeCount.toLocaleString()} · {formatDuration(durationSeconds)}
+        <div className="video-card-channel">{channelTitle}</div>
+        <div className="video-card-meta">
+          Views {viewCount.toLocaleString()} · Likes {likeCount.toLocaleString()} ·{" "}
+          {formatDuration(durationSeconds)}
           {publishedAt && ` · Published ${formatRelativeDate(publishedAt)}`}
         </div>
 
         {Boolean((typeTags && typeTags.length) || languageLabel || (extraChips && extraChips.length)) && (
-          <div
-            style={{
-              marginTop: "0.5rem",
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "0.35rem",
-              position: "relative",
-            }}
-          >
+          <div className="video-card-tags">
             {typeTags?.map((tagId) => {
               const selected = editTagsMode && selectedTags.has(tagId);
               return (
@@ -249,16 +210,8 @@ export const VideoCard: React.FC<VideoCardProps> = ({
                     e.stopPropagation();
                     toggleTagSelection(tagId);
                   }}
-                  style={{
-                    fontSize: "0.65rem",
-                    borderRadius: "999px",
-                    border: "1px solid",
-                    borderColor: selected ? "#b91c1c" : "#475569",
-                    padding: "0.2rem 0.6rem",
-                    color: selected ? "#fecaca" : "#cbd5f5",
-                    background: selected ? "#450a0a" : "transparent",
-                    cursor: editTagsMode ? "pointer" : "default",
-                  }}
+                  className={`tag-chip${selected ? " selected" : ""}`}
+                  style={{ cursor: editTagsMode ? "pointer" : "default" }}
                 >
                   {describeTag(tagId).label}
                 </button>
@@ -272,180 +225,94 @@ export const VideoCard: React.FC<VideoCardProps> = ({
                   e.stopPropagation();
                   toggleTagSelection(languageLabel);
                 }}
-                style={{
-                  fontSize: "0.65rem",
-                  borderRadius: "999px",
-                  border: "1px solid",
-                  borderColor: editTagsMode && selectedTags.has(languageLabel) ? "#b91c1c" : "#475569",
-                  padding: "0.2rem 0.6rem",
-                  color: editTagsMode && selectedTags.has(languageLabel) ? "#fecaca" : "#cbd5f5",
-                  background: editTagsMode && selectedTags.has(languageLabel) ? "#450a0a" : "transparent",
-                  cursor: editTagsMode ? "pointer" : "default",
-                }}
+                className={`tag-chip${editTagsMode && selectedTags.has(languageLabel) ? " selected" : ""}`}
+                style={{ cursor: editTagsMode ? "pointer" : "default" }}
               >
                 {languageLabels[languageLabel] || languageLabel}
               </button>
             )}
             {extraChips?.map((chip) => (
-              <span
-                key={chip}
-                style={{
-                  fontSize: "0.65rem",
-                  borderRadius: "999px",
-                  border: "1px solid #475569",
-                  padding: "0.2rem 0.6rem",
-                  color: "#cbd5f5",
-                }}
-              >
+              <span key={chip} className="tag-chip">
                 {formatChipLabel(chip)}
               </span>
             ))}
           </div>
         )}
 
-        {/* Footer actions: play + tag feedback */}
         {(onPlayClick || editTagsMode || typeTags) && (
-          <div
-            style={{
-              marginTop: "0.6rem",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "flex-end",
-              gap: "0.4rem",
-            }}
-          >
-            {onPlayClick && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onPlayClick();
-                }}
-                aria-label="Play in inline player"
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  width: "1.6rem",
-                  height: "1.6rem",
-                  borderRadius: "999px",
-                  border: "1px solid #4b5563",
-                  background: "#020617",
-                  color: "#c084fc", // same as title color
-                  fontSize: "0.9rem",
-                  cursor: "pointer",
-                }}
-              >
-                ▶
-              </button>
-            )}
+          <div className="video-card-footer">
+            <div style={{ color: "var(--text-3)", fontSize: "0.76rem" }}>
+              {active ? "Playing in inline player" : "Tap play to pin this pick above the list"}
+            </div>
 
-            {(typeTags && typeTags.length > 0) && (
-              <div style={{ position: "relative" }}>
-                {!editTagsMode ? (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setMenuOpen((open) => !open);
-                    }}
-                    style={{
-                      borderRadius: "999px",
-                      border: "1px solid #4b5563",
-                      background: "#020617",
-                      color: "#9ca3af",
-                      fontSize: "0.7rem",
-                      padding: "0.2rem 0.55rem",
-                      cursor: "pointer",
-                    }}
-                  >
-                    ⋯
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleDoneEditing}
-                    style={{
-                      borderRadius: "999px",
-                      border: "1px solid #16a34a",
-                      background: "#022c22",
-                      color: "#bbf7d0",
-                      fontSize: "0.7rem",
-                      padding: "0.2rem 0.7rem",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Done
-                  </button>
-                )}
+            <div className="video-card-actions">
+              {onPlayClick && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onPlayClick();
+                  }}
+                  aria-label="Play in inline player"
+                  className={`icon-button${active ? " active" : ""}`}
+                >
+                  ▶
+                </button>
+              )}
 
-                {menuOpen && !editTagsMode && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      right: 0,
-                      marginTop: "0.25rem",
-                      borderRadius: "0.5rem",
-                      border: "1px solid #1f2937",
-                      background: "#020617",
-                      boxShadow: "0 10px 20px rgba(0,0,0,0.6)",
-                      padding: "0.25rem 0.4rem",
-                      minWidth: "160px",
-                      zIndex: 10,
-                    }}
-                  >
+              {typeTags && typeTags.length > 0 && (
+                <div style={{ position: "relative" }}>
+                  {!editTagsMode ? (
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setMenuOpen(false);
-                        setEditTagsMode(true);
-                        setTagEditMode("add");
-                        setSelectedTags(new Set());
+                        setMenuOpen((open) => !open);
                       }}
-                      style={{
-                        width: "100%",
-                        textAlign: "left",
-                        border: "none",
-                        background: "transparent",
-                        color: "#e5e7eb",
-                        fontSize: "0.75rem",
-                        padding: "0.2rem 0.1rem",
-                        cursor: "pointer",
-                      }}
+                      className="icon-button"
                     >
-                      Add tags
+                      ⋯
                     </button>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setMenuOpen(false);
-                        setEditTagsMode(true);
-                        setTagEditMode("downvote");
-                        setSelectedTags(new Set());
-                      }}
-                      style={{
-                        width: "100%",
-                        textAlign: "left",
-                        border: "none",
-                        background: "transparent",
-                        color: "#e5e7eb",
-                        fontSize: "0.75rem",
-                        padding: "0.2rem 0.1rem",
-                        cursor: "pointer",
-                      }}
-                    >
-                      Downvote tags
+                  ) : (
+                    <button type="button" onClick={handleDoneEditing} className="primary-button">
+                      Done
                     </button>
-                  </div>
-                )}
-              </div>
-            )}
+                  )}
+
+                  {menuOpen && !editTagsMode && (
+                    <div className="inline-menu">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setMenuOpen(false);
+                          setEditTagsMode(true);
+                          setTagEditMode("add");
+                          setSelectedTags(new Set());
+                        }}
+                      >
+                        Add tags
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setMenuOpen(false);
+                          setEditTagsMode(true);
+                          setTagEditMode("downvote");
+                          setSelectedTags(new Set());
+                        }}
+                      >
+                        Downvote tags
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
-    </Wrapper>
+    </article>
   );
 };
-

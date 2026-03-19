@@ -31,7 +31,6 @@ export function ChannelFilterClient({ channels, duration, tagsParam, selectedCha
   );
 
   const applyChannels = (channelIds: string[]) => {
-    // Start from current query string so other filters (language, sort, etc.) are preserved.
     const params = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
     params.set("page", "1");
     if (duration) params.set("duration", duration);
@@ -47,16 +46,8 @@ export function ChannelFilterClient({ channels, duration, tagsParam, selectedCha
 
   return (
     <div style={{ position: "relative", maxWidth: "360px", width: "100%" }}>
-      {/* Selected channel chips */}
       {appliedChannels.length > 0 && (
-        <div
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: "0.35rem",
-            marginBottom: "0.4rem",
-          }}
-        >
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem", marginBottom: "0.45rem" }}>
           {appliedChannels.map((c) => (
             <button
               key={c.channel_id}
@@ -71,15 +62,15 @@ export function ChannelFilterClient({ channels, duration, tagsParam, selectedCha
                 gap: "0.25rem",
                 padding: "0.2rem 0.55rem",
                 borderRadius: "999px",
-                border: "1px solid #4b5563",
-                background: "rgba(15, 23, 42, 0.9)",
-                color: "#e5e7eb",
-                fontSize: "0.7rem",
+                border: "1px solid rgba(148, 184, 171, 0.14)",
+                background: "rgba(13, 24, 29, 0.92)",
+                color: "var(--text-1)",
+                fontSize: "0.72rem",
                 cursor: "pointer",
               }}
             >
               <span>{c.channel_title}</span>
-              <span style={{ fontSize: "0.8rem", color: "#9ca3af" }}>×</span>
+              <span style={{ fontSize: "0.8rem", color: "var(--text-3)" }}>×</span>
             </button>
           ))}
         </div>
@@ -92,22 +83,14 @@ export function ChannelFilterClient({ channels, duration, tagsParam, selectedCha
           value={query}
           onFocus={() => setOpen(true)}
           onBlur={() => {
-            // Delay closing slightly so clicks on the dropdown still register.
             setTimeout(() => setOpen(false), 100);
           }}
           onChange={(e) => {
             setQuery(e.target.value);
             setOpen(true);
           }}
-          style={{
-            flex: 1,
-            padding: "0.35rem 0.6rem",
-            borderRadius: "0.5rem",
-            border: "1px solid #4b5563",
-            background: "#020617",
-            color: "#e5e7eb",
-            fontSize: "0.8rem",
-          }}
+          className="input-shell"
+          style={{ flex: 1, fontSize: "0.82rem" }}
         />
         <button
           type="button"
@@ -116,16 +99,8 @@ export function ChannelFilterClient({ channels, duration, tagsParam, selectedCha
             setOpen(false);
             applyChannels([]);
           }}
-          style={{
-            padding: "0.3rem 0.7rem",
-            borderRadius: "999px",
-            border: "1px solid #4b5563",
-            background: "#020617",
-            color: "#e5e7eb",
-            fontSize: "0.75rem",
-            cursor: "pointer",
-            whiteSpace: "nowrap",
-          }}
+          className="ghost-button"
+          style={{ whiteSpace: "nowrap" }}
         >
           All
         </button>
@@ -135,15 +110,15 @@ export function ChannelFilterClient({ channels, duration, tagsParam, selectedCha
         <div
           style={{
             position: "absolute",
-            top: "2.3rem",
+            top: "3rem",
             left: 0,
             right: 0,
             maxHeight: "260px",
             overflowY: "auto",
-            background: "#020617",
-            borderRadius: "0.75rem",
-            border: "1px solid #1f2937",
-            boxShadow: "0 15px 40px rgba(2, 6, 23, 0.8)",
+            background: "rgba(7, 15, 19, 0.98)",
+            borderRadius: "1rem",
+            border: "1px solid rgba(148, 184, 171, 0.12)",
+            boxShadow: "var(--shadow-md)",
             zIndex: 30,
           }}
         >
@@ -164,14 +139,14 @@ export function ChannelFilterClient({ channels, duration, tagsParam, selectedCha
                   textAlign: "left",
                   padding: "0.45rem 0.75rem",
                   border: "none",
-                  background: isActive ? "rgba(37, 99, 235, 0.22)" : "transparent",
-                  color: "#e5e7eb",
+                  background: isActive ? "rgba(86, 149, 129, 0.18)" : "transparent",
+                  color: "var(--text-1)",
                   fontSize: "0.8rem",
                   cursor: "pointer",
                 }}
               >
                 <span>{c.channel_title}</span>
-                <span style={{ color: "#6b7280", fontSize: "0.75rem", marginLeft: "0.35rem" }}>
+                <span style={{ color: "var(--text-3)", fontSize: "0.75rem", marginLeft: "0.35rem" }}>
                   ({c.video_count})
                 </span>
               </button>

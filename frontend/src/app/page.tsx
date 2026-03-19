@@ -35,30 +35,7 @@ export const metadata: Metadata = {
 
 const backendUrl = resolveBackendApiBase();
 
-type ApiRankingItem = {
-  rank: number;
-  score: number;
-  video: {
-    youtube_id: string;
-    title: string;
-    channel_title: string;
-    thumbnail_url: string;
-    view_count: number;
-    like_count: number;
-    description?: string | null;
-    duration?: number | null;
-    tags?: string[] | null;
-    computed_tags?: string[];
-  };
-};
-
-type ApiRankingList = {
-  id: number;
-  name: string;
-  description: string;
-  published_at: string;
-  items: ApiRankingItem[];
-};
+type ApiRankingList = RankingList;
 
 async function fetchRankings(): Promise<RankingList | null> {
   if (!backendUrl) {
@@ -66,8 +43,6 @@ async function fetchRankings(): Promise<RankingList | null> {
   }
 
   const response = await fetch(`${backendUrl}/rankings/weekly`, {
-    // This is a server component; fetch happens on the server.
-    // Use incremental revalidation so navigating between pages stays fast.
     next: { revalidate: 300 },
   });
 
@@ -99,7 +74,6 @@ async function fetchRankings(): Promise<RankingList | null> {
           description: item.video.description ?? null,
           duration: item.video.duration ?? null,
           tags: item.video.tags ?? null,
-          // Keep computed_tags in the object so the explorer can use it.
           computed_tags: item.video.computed_tags ?? [],
         } as any,
       }))
@@ -113,45 +87,58 @@ export default async function HomePage() {
     ranking = await fetchRankings();
   } catch (error) {
     return (
-      <div style={{ minHeight: "100vh", background: "#05070a", color: "#eee", padding: "3rem" }}>
-        <h1 style={{ fontSize: "2.8rem", marginBottom: "1rem" }}>TingleRadar</h1>
-        <p style={{ fontSize: "1.1rem" }}>{(error as Error).message}</p>
-      </div>
+      <main className="page-shell">
+        <div className="app-shell">
+          <div className="surface-panel">
+            <p className="eyebrow">TingleRadar</p>
+            <h1 className="page-title">Weekly ASMR radar</h1>
+            <p className="page-description">{(error as Error).message}</p>
+          </div>
+        </div>
+      </main>
     );
   }
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "linear-gradient(180deg, #040710, #0b1222 60%, #06050a)",
-        color: "#f5f5f5",
-      }}
-    >
-      <div style={{ maxWidth: "960px", margin: "0 auto", padding: "2.5rem 1.25rem" }}>
-        <header style={{ marginBottom: "2rem" }}>
-          <p style={{ letterSpacing: "0.4em", fontSize: "0.8rem", color: "#6b7280" }}>ASMR BOARD</p>
-          <h1 style={{ fontSize: "3rem", margin: "0.5rem 0" }}>TingleRadar</h1>
-          <p style={{ color: "#cbd5f5", fontSize: "1rem", maxWidth: "640px" }}>
-            Weekly ASMR leaderboard powered by community tags and curated signals.
-          </p>
-        </header>
+    <main className="page-shell">
+      <div className="app-shell">
+        <div className="page-intro">
+          <div className="hero-panel hero-grid">
+            <div className="hero-meta">
+              <div>
+                <p className="eyebrow">Calm Editorial Discovery</p>
+                <h1 className="page-title">Find the week’s softest ASMR picks, then filter fast.</h1>
+              </div>
+              <p className="page-description">
+                TingleRadar keeps the latest leaderboard close at hand, with quiet surfaces and
+                faster filtering tuned for late-night browsing on mobile first.
+              </p>
+              <div className="page-kicker">
+                <span className="info-pill">No white backgrounds</span>
+                <span className="info-pill">Built for whisper, roleplay, and no-talking sessions</span>
+              </div>
+            </div>
 
-        {ranking && (
-          <div
-            style={{
-              borderRadius: "1.5rem",
-              background: "rgba(15, 20, 36, 0.75)",
-              border: "1px solid #1e293b",
-              padding: "2rem",
-              boxShadow: "0 20px 80px rgba(5, 6, 15, 0.45)",
-            }}
-          >
-            <RankingExplorer ranking={ranking} />
+            <div className="hero-aside">
+              <div className="aside-card">
+                <p className="aside-label">Listening mode</p>
+                <p className="aside-value">
+                  Start with filters, keep your place in the inline player, and move through the
+                  list without visual glare.
+                </p>
+              </div>
+              <div className="aside-card">
+                <p className="aside-label">Release cadence</p>
+                <p className="aside-value">
+                  Latest board refreshed weekly with catalog context carried into browse.
+                </p>
+              </div>
+            </div>
           </div>
-        )}
+        </div>
+
+        {ranking && <RankingExplorer ranking={ranking} />}
       </div>
-    </div>
+    </main>
   );
 }
-
