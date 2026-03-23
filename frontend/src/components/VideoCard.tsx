@@ -241,10 +241,6 @@ export const VideoCard: React.FC<VideoCardProps> = ({
 
         {(onPlayClick || editTagsMode || typeTags) && (
           <div className="video-card-footer">
-            <div style={{ color: "var(--text-3)", fontSize: "0.76rem" }}>
-              {active ? "Playing in inline player" : "Tap play to pin this pick above the list"}
-            </div>
-
             <div className="video-card-actions">
               {onPlayClick && (
                 <button
