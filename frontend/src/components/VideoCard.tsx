@@ -197,54 +197,52 @@ export const VideoCard: React.FC<VideoCardProps> = ({
             {publishedAt && ` · Published ${formatRelativeDate(publishedAt)}`}
           </div>
 
-          {Boolean((typeTags && typeTags.length) || languageLabel || (extraChips && extraChips.length)) && (
-            <div className="video-card-tags">
-              {typeTags?.map((tagId) => {
-                const selected = editTagsMode && selectedTags.has(tagId);
-                return (
+          <div className="video-card-footer">
+            {Boolean((typeTags && typeTags.length) || languageLabel || (extraChips && extraChips.length)) && (
+              <div className="video-card-tags">
+                {typeTags?.map((tagId) => {
+                  const selected = editTagsMode && selectedTags.has(tagId);
+                  return (
+                    <button
+                      type="button"
+                      key={tagId}
+                      onClick={(e) => {
+                        if (!editTagsMode) return;
+                        e.stopPropagation();
+                        toggleTagSelection(tagId);
+                      }}
+                      className={`tag-chip${selected ? " selected" : ""}`}
+                      style={{ cursor: editTagsMode ? "pointer" : "default" }}
+                    >
+                      {describeTag(tagId).label}
+                    </button>
+                  );
+                })}
+                {languageLabel && (
                   <button
                     type="button"
-                    key={tagId}
                     onClick={(e) => {
                       if (!editTagsMode) return;
                       e.stopPropagation();
-                      toggleTagSelection(tagId);
+                      toggleTagSelection(languageLabel);
                     }}
-                    className={`tag-chip${selected ? " selected" : ""}`}
+                    className={`tag-chip${
+                      editTagsMode && selectedTags.has(languageLabel) ? " selected" : ""
+                    }`}
                     style={{ cursor: editTagsMode ? "pointer" : "default" }}
                   >
-                    {describeTag(tagId).label}
+                    {languageLabels[languageLabel] || languageLabel}
                   </button>
-                );
-              })}
-              {languageLabel && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    if (!editTagsMode) return;
-                    e.stopPropagation();
-                    toggleTagSelection(languageLabel);
-                  }}
-                  className={`tag-chip${
-                    editTagsMode && selectedTags.has(languageLabel) ? " selected" : ""
-                  }`}
-                  style={{ cursor: editTagsMode ? "pointer" : "default" }}
-                >
-                  {languageLabels[languageLabel] || languageLabel}
-                </button>
-              )}
-              {extraChips?.map((chip) => (
-                <span key={chip} className="tag-chip">
-                  {formatChipLabel(chip)}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
+                )}
+                {extraChips?.map((chip) => (
+                  <span key={chip} className="tag-chip">
+                    {formatChipLabel(chip)}
+                  </span>
+                ))}
+              </div>
+            )}
 
-        {typeTags && typeTags.length > 0 && (
-          <div className="video-card-footer">
-            <div />
+            {typeTags && typeTags.length > 0 && (
             <div className="video-card-actions">
               <div style={{ position: "relative" }}>
                 {!editTagsMode ? (
@@ -294,8 +292,9 @@ export const VideoCard: React.FC<VideoCardProps> = ({
                 )}
               </div>
             </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </article>
   );
