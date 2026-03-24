@@ -481,6 +481,20 @@ button:disabled {
   color: #f7faf8;
 }
 
+.video-card-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.9rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.video-card-main {
+  flex: 1;
+  min-width: 0;
+}
+
 .video-card-channel {
   margin-top: 0.38rem;
   color: var(--text-1);
@@ -519,12 +533,10 @@ button:disabled {
   color: #f8d7d9;
 }
 
-.video-card-footer {
-  margin-top: 0.75rem;
+.video-card-side {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.8rem;
+  align-self: flex-start;
+  flex-shrink: 0;
 }
 
 .video-card-actions {
@@ -675,14 +687,12 @@ input[type="number"] {
     width: 100%;
   }
 
-  .video-card-footer {
+  .video-card-content {
     width: 100%;
-    flex-direction: column;
-    align-items: stretch;
   }
 
-  .video-card-actions {
-    justify-content: flex-end;
+  .video-card-side {
+    align-self: flex-start;
   }
 }
 

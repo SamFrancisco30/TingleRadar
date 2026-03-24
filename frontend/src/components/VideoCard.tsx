@@ -180,67 +180,71 @@ export const VideoCard: React.FC<VideoCardProps> = ({
         )}
       </div>
 
-      <div style={{ flex: 1, minWidth: 0 }}>
-        {typeof rank === "number" && <p className="video-card-rank">#{rank}</p>}
-        <a
-          href={`https://youtube.com/watch?v=${youtubeId}`}
-          target="_blank"
-          rel="noreferrer"
-          className="video-card-title"
-        >
-          {title}
-        </a>
-        <div className="video-card-channel">{channelTitle}</div>
-        <div className="video-card-meta">
-          Views {viewCount.toLocaleString()} · Likes {likeCount.toLocaleString()} ·{" "}
-          {formatDuration(durationSeconds)}
-          {publishedAt && ` · Published ${formatRelativeDate(publishedAt)}`}
-        </div>
+      <div className="video-card-content">
+        <div className="video-card-main">
+          {typeof rank === "number" && <p className="video-card-rank">#{rank}</p>}
+          <a
+            href={`https://youtube.com/watch?v=${youtubeId}`}
+            target="_blank"
+            rel="noreferrer"
+            className="video-card-title"
+          >
+            {title}
+          </a>
+          <div className="video-card-channel">{channelTitle}</div>
+          <div className="video-card-meta">
+            Views {viewCount.toLocaleString()} · Likes {likeCount.toLocaleString()} ·{" "}
+            {formatDuration(durationSeconds)}
+            {publishedAt && ` · Published ${formatRelativeDate(publishedAt)}`}
+          </div>
 
-        {Boolean((typeTags && typeTags.length) || languageLabel || (extraChips && extraChips.length)) && (
-          <div className="video-card-tags">
-            {typeTags?.map((tagId) => {
-              const selected = editTagsMode && selectedTags.has(tagId);
-              return (
+          {Boolean((typeTags && typeTags.length) || languageLabel || (extraChips && extraChips.length)) && (
+            <div className="video-card-tags">
+              {typeTags?.map((tagId) => {
+                const selected = editTagsMode && selectedTags.has(tagId);
+                return (
+                  <button
+                    type="button"
+                    key={tagId}
+                    onClick={(e) => {
+                      if (!editTagsMode) return;
+                      e.stopPropagation();
+                      toggleTagSelection(tagId);
+                    }}
+                    className={`tag-chip${selected ? " selected" : ""}`}
+                    style={{ cursor: editTagsMode ? "pointer" : "default" }}
+                  >
+                    {describeTag(tagId).label}
+                  </button>
+                );
+              })}
+              {languageLabel && (
                 <button
                   type="button"
-                  key={tagId}
                   onClick={(e) => {
                     if (!editTagsMode) return;
                     e.stopPropagation();
-                    toggleTagSelection(tagId);
+                    toggleTagSelection(languageLabel);
                   }}
-                  className={`tag-chip${selected ? " selected" : ""}`}
+                  className={`tag-chip${
+                    editTagsMode && selectedTags.has(languageLabel) ? " selected" : ""
+                  }`}
                   style={{ cursor: editTagsMode ? "pointer" : "default" }}
                 >
-                  {describeTag(tagId).label}
+                  {languageLabels[languageLabel] || languageLabel}
                 </button>
-              );
-            })}
-            {languageLabel && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  if (!editTagsMode) return;
-                  e.stopPropagation();
-                  toggleTagSelection(languageLabel);
-                }}
-                className={`tag-chip${editTagsMode && selectedTags.has(languageLabel) ? " selected" : ""}`}
-                style={{ cursor: editTagsMode ? "pointer" : "default" }}
-              >
-                {languageLabels[languageLabel] || languageLabel}
-              </button>
-            )}
-            {extraChips?.map((chip) => (
-              <span key={chip} className="tag-chip">
-                {formatChipLabel(chip)}
-              </span>
-            ))}
-          </div>
-        )}
+              )}
+              {extraChips?.map((chip) => (
+                <span key={chip} className="tag-chip">
+                  {formatChipLabel(chip)}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
 
         {(onPlayClick || editTagsMode || typeTags) && (
-          <div className="video-card-footer">
+          <div className="video-card-side">
             <div className="video-card-actions">
               {onPlayClick && (
                 <button
