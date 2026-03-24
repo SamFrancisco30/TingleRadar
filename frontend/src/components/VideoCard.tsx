@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { languageLabels } from "./FilterPanel";
-import { describeTag } from "./tagCatalog";
+import { ALL_TAG_IDS, describeTag } from "./tagCatalog";
 import { resolveBackendApiBase } from "../lib/backendApi";
 
 export type VideoCardProps = {
@@ -99,6 +99,16 @@ export const VideoCard: React.FC<VideoCardProps> = ({
   const [editTagsMode, setEditTagsMode] = useState(false);
   const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
   const [tagEditMode, setTagEditMode] = useState<"downvote" | "add" | null>(null);
+  const [displayTags, setDisplayTags] = useState<string[]>(typeTags ?? []);
+  const [displayLanguage, setDisplayLanguage] = useState<string | undefined>(languageLabel);
+
+  useEffect(() => {
+    setDisplayTags(typeTags ?? []);
+  }, [typeTags]);
+
+  useEffect(() => {
+    setDisplayLanguage(languageLabel);
+  }, [languageLabel]);
 
   const getFingerprint = (): string => {
     if (typeof window === "undefined") return "anonymous";
@@ -128,7 +138,24 @@ export const VideoCard: React.FC<VideoCardProps> = ({
         body: JSON.stringify({ vote }),
       });
     } catch {
-      // 静默失败即可，不打扰用户
+      // Silent failure is acceptable for lightweight feedback.
+    }
+  };
+
+  const sendUserTag = async (tagId: string) => {
+    const backendUrl = resolveBackendApiBase();
+    if (!backendUrl) return false;
+    try {
+      const response = await fetch(`${backendUrl}/videos/${youtubeId}/tags`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ tag: tagId }),
+      });
+      return response.ok;
+    } catch {
+      return false;
     }
   };
 
@@ -144,6 +171,11 @@ export const VideoCard: React.FC<VideoCardProps> = ({
     });
   };
 
+  const availableAddTags = useMemo(
+    () => ALL_TAG_IDS.filter((tagId) => !displayTags.includes(tagId) && tagId !== displayLanguage),
+    [displayLanguage, displayTags]
+  );
+
   const handleDoneEditing = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!tagEditMode || selectedTags.size === 0) {
@@ -152,12 +184,31 @@ export const VideoCard: React.FC<VideoCardProps> = ({
       setTagEditMode(null);
       return;
     }
-    const voteValue: 1 | -1 = tagEditMode === "downvote" ? -1 : 1;
-    await Promise.all(Array.from(selectedTags).map((tag) => sendTagVote(tag, voteValue)));
+
+    const chosenTags = Array.from(selectedTags);
+    if (tagEditMode === "downvote") {
+      await Promise.all(chosenTags.map((tag) => sendTagVote(tag, -1)));
+    } else {
+      const results = await Promise.all(chosenTags.map((tag) => sendUserTag(tag)));
+      const successfulTags = chosenTags.filter((_, index) => results[index]);
+      const nextLanguage = successfulTags.find((tag) => Boolean(languageLabels[tag]));
+      const nextTags = successfulTags.filter((tag) => !languageLabels[tag]);
+
+      if (nextTags.length > 0) {
+        setDisplayTags((prev) => Array.from(new Set([...prev, ...nextTags])).sort());
+      }
+      if (nextLanguage) {
+        setDisplayLanguage(nextLanguage);
+      }
+    }
+
     setSelectedTags(new Set());
     setEditTagsMode(false);
     setTagEditMode(null);
   };
+
+  const hasTagControls =
+    displayTags.length > 0 || Boolean(displayLanguage) || availableAddTags.length > 0;
 
   return (
     <Wrapper
@@ -228,7 +279,7 @@ export const VideoCard: React.FC<VideoCardProps> = ({
           {publishedAt && ` · Published ${formatRelativeDate(publishedAt)}`}
         </div>
 
-        {Boolean((typeTags && typeTags.length) || languageLabel || (extraChips && extraChips.length)) && (
+        {Boolean(displayTags.length || displayLanguage || (extraChips && extraChips.length) || (editTagsMode && tagEditMode === "add" && availableAddTags.length)) && (
           <div
             style={{
               marginTop: "0.5rem",
@@ -238,14 +289,14 @@ export const VideoCard: React.FC<VideoCardProps> = ({
               position: "relative",
             }}
           >
-            {typeTags?.map((tagId) => {
+            {displayTags.map((tagId) => {
               const selected = editTagsMode && selectedTags.has(tagId);
               return (
                 <button
                   type="button"
                   key={tagId}
                   onClick={(e) => {
-                    if (!editTagsMode) return;
+                    if (!editTagsMode || tagEditMode !== "downvote") return;
                     e.stopPropagation();
                     toggleTagSelection(tagId);
                   }}
@@ -257,35 +308,37 @@ export const VideoCard: React.FC<VideoCardProps> = ({
                     padding: "0.2rem 0.6rem",
                     color: selected ? "#fecaca" : "#cbd5f5",
                     background: selected ? "#450a0a" : "transparent",
-                    cursor: editTagsMode ? "pointer" : "default",
+                    cursor: editTagsMode && tagEditMode === "downvote" ? "pointer" : "default",
                   }}
                 >
                   {describeTag(tagId).label}
                 </button>
               );
             })}
-            {languageLabel && (
+
+            {displayLanguage && (
               <button
                 type="button"
                 onClick={(e) => {
-                  if (!editTagsMode) return;
+                  if (!editTagsMode || tagEditMode !== "downvote") return;
                   e.stopPropagation();
-                  toggleTagSelection(languageLabel);
+                  toggleTagSelection(displayLanguage);
                 }}
                 style={{
                   fontSize: "0.65rem",
                   borderRadius: "999px",
                   border: "1px solid",
-                  borderColor: editTagsMode && selectedTags.has(languageLabel) ? "#b91c1c" : "#475569",
+                  borderColor: editTagsMode && selectedTags.has(displayLanguage) ? "#b91c1c" : "#475569",
                   padding: "0.2rem 0.6rem",
-                  color: editTagsMode && selectedTags.has(languageLabel) ? "#fecaca" : "#cbd5f5",
-                  background: editTagsMode && selectedTags.has(languageLabel) ? "#450a0a" : "transparent",
-                  cursor: editTagsMode ? "pointer" : "default",
+                  color: editTagsMode && selectedTags.has(displayLanguage) ? "#fecaca" : "#cbd5f5",
+                  background: editTagsMode && selectedTags.has(displayLanguage) ? "#450a0a" : "transparent",
+                  cursor: editTagsMode && tagEditMode === "downvote" ? "pointer" : "default",
                 }}
               >
-                {languageLabels[languageLabel] || languageLabel}
+                {languageLabels[displayLanguage] || displayLanguage}
               </button>
             )}
+
             {extraChips?.map((chip) => (
               <span
                 key={chip}
@@ -300,11 +353,38 @@ export const VideoCard: React.FC<VideoCardProps> = ({
                 {formatChipLabel(chip)}
               </span>
             ))}
+
+            {editTagsMode &&
+              tagEditMode === "add" &&
+              availableAddTags.map((tagId) => {
+                const selected = selectedTags.has(tagId);
+                return (
+                  <button
+                    type="button"
+                    key={`add-${tagId}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleTagSelection(tagId);
+                    }}
+                    style={{
+                      fontSize: "0.65rem",
+                      borderRadius: "999px",
+                      border: "1px dashed",
+                      borderColor: selected ? "#16a34a" : "#475569",
+                      padding: "0.2rem 0.6rem",
+                      color: selected ? "#bbf7d0" : "#cbd5f5",
+                      background: selected ? "#052e16" : "transparent",
+                      cursor: "pointer",
+                    }}
+                  >
+                    + {describeTag(tagId).label}
+                  </button>
+                );
+              })}
           </div>
         )}
 
-        {/* Footer actions: play + tag feedback */}
-        {(onPlayClick || editTagsMode || typeTags) && (
+        {(onPlayClick || editTagsMode || hasTagControls) && (
           <div
             style={{
               marginTop: "0.6rem",
@@ -331,7 +411,7 @@ export const VideoCard: React.FC<VideoCardProps> = ({
                   borderRadius: "999px",
                   border: "1px solid #4b5563",
                   background: "#020617",
-                  color: "#c084fc", // same as title color
+                  color: "#c084fc",
                   fontSize: "0.9rem",
                   cursor: "pointer",
                 }}
@@ -340,7 +420,7 @@ export const VideoCard: React.FC<VideoCardProps> = ({
               </button>
             )}
 
-            {(typeTags && typeTags.length > 0) && (
+            {hasTagControls && (
               <div style={{ position: "relative" }}>
                 {!editTagsMode ? (
                   <button
@@ -448,4 +528,3 @@ export const VideoCard: React.FC<VideoCardProps> = ({
     </Wrapper>
   );
 };
-

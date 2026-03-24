@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_db
+from app.services.tag_catalog import ALLOWED_TAGS
 from app.services.tag_votes import record_tag_vote
 
 router = APIRouter(prefix="/videos", tags=["tag-votes"])
@@ -12,33 +13,6 @@ router = APIRouter(prefix="/videos", tags=["tag-votes"])
 
 class TagVotePayload(BaseModel):
   vote: int  # +1 or -1
-
-
-ALLOWED_TAGS = {
-    "tapping",
-    "scratching",
-    "crinkling",
-    "brushing",
-    "ear_cleaning",
-    "mouth_sounds",
-    "white_noise",
-    "binaural",
-    "visual_asmr",
-    "layered",
-    "roleplay",
-    "whisper",
-    "soft_spoken",
-    "no_talking",
-    "rp_haircut",
-    "rp_cranial",
-    "rp_dentist",
-    # Language codes are also allowed so users can downvote language classification.
-    "en",
-    "ja",
-    "ko",
-    "zh",
-}
-
 
 @router.post("/{video_id}/tags/{tag}/vote", response_model=Dict[str, int])
 def vote_on_tag(

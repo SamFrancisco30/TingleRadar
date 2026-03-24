@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.api.endpoints import channels, rankings, youtube, videos, tag_votes
+from app.api.endpoints import channels, rankings, youtube, videos, tag_votes, user_tags
 
 
 api_router = APIRouter()
@@ -9,3 +9,4 @@ api_router.include_router(youtube.router)
 api_router.include_router(videos.router)
 api_router.include_router(channels.router)
 api_router.include_router(tag_votes.router)
+api_router.include_router(user_tags.router)

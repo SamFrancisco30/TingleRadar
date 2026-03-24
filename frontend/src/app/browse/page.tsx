@@ -73,7 +73,7 @@ async function fetchVideos(
   }
 
   const res = await fetch(`${backendUrl}/videos?${params.toString()}`, {
-    cache: "no-store",
+    next: { revalidate: 120 },
   });
 
   if (!res.ok) {
@@ -168,6 +168,17 @@ export default async function BrowsePage({
   const hasNext = currentPage * page_size < total;
   const hasPrev = currentPage > 1;
   const totalPages = Math.max(1, Math.ceil(total / page_size));
+  const buildBrowseHref = (targetPage: number) => {
+    const params = new URLSearchParams();
+    params.set("page", String(targetPage));
+    if (duration) params.set("duration", duration);
+    if (selectedTags.length > 0) params.set("tags", selectedTags.join(","));
+    if (selectedChannelIds.length > 0) params.set("channels", selectedChannelIds.join(","));
+    if (language) params.set("language", language);
+    if (sort) params.set("sort", sort);
+    if (selectedExcludeTags.length > 0) params.set("exclude", selectedExcludeTags.join(","));
+    return `/browse?${params.toString()}`;
+  };
 
   const Pagination = () => (
     <div
@@ -186,7 +197,7 @@ export default async function BrowsePage({
       </span>
       <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
         <a
-          href={currentPage > 1 ? `/browse?page=1` : "#"}
+          href={currentPage > 1 ? buildBrowseHref(1) : "#"}
           style={{
             padding: "0.35rem 0.8rem",
             borderRadius: "999px",
@@ -201,7 +212,7 @@ export default async function BrowsePage({
           First
         </a>
         <a
-          href={hasPrev ? `/browse?page=${currentPage - 1}` : "#"}
+          href={hasPrev ? buildBrowseHref(currentPage - 1) : "#"}
           style={{
             padding: "0.35rem 0.85rem",
             borderRadius: "999px",
@@ -216,7 +227,7 @@ export default async function BrowsePage({
           Prev
         </a>
         <a
-          href={hasNext ? `/browse?page=${currentPage + 1}` : "#"}
+          href={hasNext ? buildBrowseHref(currentPage + 1) : "#"}
           style={{
             padding: "0.35rem 0.85rem",
             borderRadius: "999px",
@@ -235,6 +246,16 @@ export default async function BrowsePage({
           method="get"
           style={{ display: "flex", alignItems: "center", gap: "0.3rem", marginLeft: "0.5rem" }}
         >
+          {duration && <input type="hidden" name="duration" value={duration} />}
+          {selectedTags.length > 0 && <input type="hidden" name="tags" value={selectedTags.join(",")} />}
+          {selectedChannelIds.length > 0 && (
+            <input type="hidden" name="channels" value={selectedChannelIds.join(",")} />
+          )}
+          {language && <input type="hidden" name="language" value={language} />}
+          {sort && <input type="hidden" name="sort" value={sort} />}
+          {selectedExcludeTags.length > 0 && (
+            <input type="hidden" name="exclude" value={selectedExcludeTags.join(",")} />
+          )}
           <input
             type="number"
             name="page"

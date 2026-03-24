@@ -9,6 +9,7 @@ from app.models import RankingItem as RankingItemModel
 from app.models import Video as VideoModel
 from app.schemas.ranking import RankingItem, RankingList
 from app.schemas.video import VideoBase
+from app.services.tag_feedback import build_effective_tags, get_user_tags_map
 from app.services.tagging import compute_tags_for_video
 from app.services.tag_votes import get_tag_vote_scores
 
@@ -44,6 +45,7 @@ def _build_ranking_payload(db: Session, ranking: RankingListModel) -> RankingLis
     )
     ranking_items = []
     computed_tags_updated = False
+    user_tags_by_video = get_user_tags_map(db, [item.video_id for item in items_query])
     for item in items_query:
         video = db.query(VideoModel).filter(VideoModel.youtube_id == item.video_id).first()
         if not video:
@@ -61,18 +63,11 @@ def _build_ranking_payload(db: Session, ranking: RankingListModel) -> RankingLis
             db.add(video)
             computed_tags_updated = True
 
-        vote_scores = get_tag_vote_scores(db, video.youtube_id)
-
-        # Apply simple vote-based adjustments: heavily downvoted auto tags are
-        # suppressed; heavily upvoted non-auto tags are added.
-        effective_tags = set(auto_tags)
-        for tag, score in vote_scores.items():
-            if tag in effective_tags and score <= -3:
-                effective_tags.remove(tag)
-            elif tag not in effective_tags and score >= 3:
-                effective_tags.add(tag)
-
-        video_payload.computed_tags = list(effective_tags)
+        video_payload.computed_tags = build_effective_tags(
+            auto_tags=auto_tags,
+            vote_scores=get_tag_vote_scores(db, video.youtube_id),
+            user_tags=user_tags_by_video.get(video.youtube_id, []),
+        )
 
         ranking_items.append(
             RankingItem(

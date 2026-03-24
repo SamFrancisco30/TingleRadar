@@ -4,7 +4,9 @@ from sqlalchemy.orm import Session
 
 from app.models import Video as VideoModel
 from app.schemas.video import VideoBase
+from app.services.tag_feedback import build_effective_tags, get_user_tags_map
 from app.services.tagging import compute_tags_for_video
+from app.services.tag_votes import get_tag_vote_scores
 
 
 def _detect_language_from_title(title: str) -> str:
@@ -89,6 +91,18 @@ def browse_videos(
         # Default: newest first
         query = query.order_by(VideoModel.published_at.desc())
 
+    # The unfiltered/default browse path should stay fast, so when no
+    # Python-only filters are active we count + paginate in SQL directly.
+    should_filter_in_python = bool(tags or language or exclude_tags)
+    if not should_filter_in_python:
+        total = query.count()
+        rows = (
+            query.offset((page - 1) * page_size)
+            .limit(page_size)
+            .all()
+        )
+        return _serialize_video_rows(db, rows), total
+
     # NOTE: language and tag filters are applied in Python so that we can reuse
     # the same heuristics as the frontend. To keep pagination consistent when
     # those filters are used, we fetch the full candidate set after SQL-level
@@ -98,21 +112,7 @@ def browse_videos(
     tag_set = set(tags or [])
     exclude_set = set(exclude_tags or [])
     filtered: List[VideoBase] = []
-    computed_tags_updated = False
-    for video in rows:
-        payload = VideoBase.from_orm(video)
-
-        # Prefer persisted computed_tags when available; otherwise compute once
-        # and persist back to the Video row so subsequent requests reuse it.
-        if video.computed_tags:
-            auto_tags = list(video.computed_tags)
-        else:
-            auto_tags = compute_tags_for_video(video)
-            video.computed_tags = auto_tags
-            db.add(video)
-            computed_tags_updated = True
-
-        payload.computed_tags = auto_tags
+    for payload in _serialize_video_rows(db, rows):
 
         # Optional language filter using the same heuristic as the frontend
         # (RankingExplorer) so that classification stays consistent.
@@ -131,13 +131,39 @@ def browse_videos(
                 continue
         filtered.append(payload)
 
-    if computed_tags_updated:
-        db.commit()
-
     total = len(filtered)
     start = (page - 1) * page_size
     end = start + page_size
     items = filtered[start:end]
 
     return items, total
+
+
+def _serialize_video_rows(db: Session, rows: Sequence[VideoModel]) -> List[VideoBase]:
+    computed_tags_updated = False
+    user_tags_by_video = get_user_tags_map(db, [video.youtube_id for video in rows])
+    payloads: List[VideoBase] = []
+
+    for video in rows:
+        payload = VideoBase.from_orm(video)
+
+        if video.computed_tags:
+            auto_tags = list(video.computed_tags)
+        else:
+            auto_tags = compute_tags_for_video(video)
+            video.computed_tags = auto_tags
+            db.add(video)
+            computed_tags_updated = True
+
+        payload.computed_tags = build_effective_tags(
+            auto_tags=auto_tags,
+            vote_scores=get_tag_vote_scores(db, video.youtube_id),
+            user_tags=user_tags_by_video.get(video.youtube_id, []),
+        )
+        payloads.append(payload)
+
+    if computed_tags_updated:
+        db.commit()
+
+    return payloads
 

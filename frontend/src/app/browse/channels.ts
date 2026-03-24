@@ -12,7 +12,7 @@ export async function fetchPopularChannels(): Promise<ChannelSummary[]> {
   if (!backendUrl) return [];
 
   const res = await fetch(`${backendUrl}/channels/popular?limit=40`, {
-    cache: "no-store",
+    next: { revalidate: 300 },
   });
 
   if (!res.ok) {
