@@ -482,16 +482,11 @@ button:disabled {
 }
 
 .video-card-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 0.9rem;
   flex: 1;
   min-width: 0;
 }
 
 .video-card-main {
-  flex: 1;
   min-width: 0;
 }
 
@@ -531,6 +526,14 @@ button:disabled {
   border-color: rgba(217, 142, 148, 0.28);
   background: rgba(100, 36, 41, 0.34);
   color: #f8d7d9;
+}
+
+.video-card-footer {
+  margin-top: 0.75rem;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.8rem;
 }
 
 .video-card-side {
@@ -687,12 +690,8 @@ input[type="number"] {
     width: 100%;
   }
 
-  .video-card-content {
+  .video-card-footer {
     width: 100%;
-  }
-
-  .video-card-side {
-    align-self: flex-start;
   }
 }
 

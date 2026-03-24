@@ -90,7 +90,6 @@ export const VideoCard: React.FC<VideoCardProps> = ({
   typeTags,
   languageLabel,
   extraChips,
-  onPlayClick,
   active,
 }) => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -243,72 +242,57 @@ export const VideoCard: React.FC<VideoCardProps> = ({
           )}
         </div>
 
-        {(onPlayClick || editTagsMode || typeTags) && (
-          <div className="video-card-side">
+        {typeTags && typeTags.length > 0 && (
+          <div className="video-card-footer">
+            <div />
             <div className="video-card-actions">
-              {onPlayClick && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onPlayClick();
-                  }}
-                  aria-label="Play in inline player"
-                  className={`icon-button${active ? " active" : ""}`}
-                >
-                  ▶
-                </button>
-              )}
+              <div style={{ position: "relative" }}>
+                {!editTagsMode ? (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setMenuOpen((open) => !open);
+                    }}
+                    className="icon-button"
+                  >
+                    ⋯
+                  </button>
+                ) : (
+                  <button type="button" onClick={handleDoneEditing} className="primary-button">
+                    Done
+                  </button>
+                )}
 
-              {typeTags && typeTags.length > 0 && (
-                <div style={{ position: "relative" }}>
-                  {!editTagsMode ? (
+                {menuOpen && !editTagsMode && (
+                  <div className="inline-menu">
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setMenuOpen((open) => !open);
+                        setMenuOpen(false);
+                        setEditTagsMode(true);
+                        setTagEditMode("add");
+                        setSelectedTags(new Set());
                       }}
-                      className="icon-button"
                     >
-                      ⋯
+                      Add tags
                     </button>
-                  ) : (
-                    <button type="button" onClick={handleDoneEditing} className="primary-button">
-                      Done
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setMenuOpen(false);
+                        setEditTagsMode(true);
+                        setTagEditMode("downvote");
+                        setSelectedTags(new Set());
+                      }}
+                    >
+                      Downvote tags
                     </button>
-                  )}
-
-                  {menuOpen && !editTagsMode && (
-                    <div className="inline-menu">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setMenuOpen(false);
-                          setEditTagsMode(true);
-                          setTagEditMode("add");
-                          setSelectedTags(new Set());
-                        }}
-                      >
-                        Add tags
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setMenuOpen(false);
-                          setEditTagsMode(true);
-                          setTagEditMode("downvote");
-                          setSelectedTags(new Set());
-                        }}
-                      >
-                        Downvote tags
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
